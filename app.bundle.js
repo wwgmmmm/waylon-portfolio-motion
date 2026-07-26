@@ -14268,6 +14268,7 @@
   }
   function setManifestoIntroCursor() {
     if (!manifestoCursor) return;
+    cursorRenderer.domElement.style.opacity = "1";
     const base = manifestoCursor.userData.baseScale * (innerWidth < 760 ? 0.72 : 1);
     manifestoCursor.visible = true;
     setCursorOpacity(manifestoCursor, 1);
@@ -14318,6 +14319,7 @@
     if (manifestoCursor) {
       const base = manifestoCursor.userData.baseScale * (innerWidth < 760 ? 0.72 : 1), frontX = -0.2, frontY = 0.2, frontZ = 0.04, anchorY = titleCursorY();
       if (p2 < 0.11) {
+        cursorRenderer.domElement.style.opacity = "1";
         manifestoCursor.visible = true;
         setCursorOpacity(manifestoCursor, 1);
         manifestoCursor.scale.setScalar(base * 1.18);
@@ -14325,6 +14327,7 @@
         manifestoCursor.rotation.set(frontX, frontY, frontZ);
       } else if (p2 < 0.23) {
         const raw = (p2 - 0.11) / 0.12, flip = raw * raw * (3 - 2 * raw);
+        cursorRenderer.domElement.style.opacity = "1";
         manifestoCursor.visible = true;
         setCursorOpacity(manifestoCursor, 1);
         manifestoCursor.scale.setScalar(base * Ss.lerp(1.18, 34, flip));
@@ -14332,16 +14335,19 @@
         manifestoCursor.rotation.set(frontX, frontY + Math.sin(flip * Math.PI) * 0.22, frontZ + flip * Math.PI * 2);
       } else if (p2 < 0.29) {
         const fade = (p2 - 0.23) / 0.06;
+        cursorRenderer.domElement.style.opacity = "1";
         manifestoCursor.visible = true;
         setCursorOpacity(manifestoCursor, 1 - fade);
         manifestoCursor.scale.setScalar(base * 34);
         manifestoCursor.position.set(0, anchorY, 0.4);
         manifestoCursor.rotation.set(frontX, frontY, frontZ + Math.PI * 2);
-      } else if (p2 < 0.76) {
+      } else if (p2 < 0.9) {
+        cursorRenderer.domElement.style.opacity = "0";
         manifestoCursor.visible = false;
         setCursorOpacity(manifestoCursor, 1);
       } else {
-        const smooth = exit * exit * (3 - 2 * exit);
+        const cursorExit = Math.max(0, Math.min(1, (p2 - 0.9) / 0.075)), smooth = cursorExit * cursorExit * (3 - 2 * cursorExit);
+        cursorRenderer.domElement.style.opacity = "1";
         manifestoCursor.visible = true;
         setCursorOpacity(manifestoCursor, 1);
         manifestoCursor.scale.setScalar(base * Ss.lerp(34, 1, smooth));
