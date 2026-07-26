@@ -10,6 +10,7 @@
 </head>
 <body>
   <div id="loader"><span></span></div>
+  <script>setTimeout(()=>{const loader=document.getElementById("loader");if(loader){loader.style.transition="opacity .35s";loader.style.opacity="0";loader.style.pointerEvents="none";setTimeout(()=>loader.remove(),400)}},6500)</script>
   <header class="hud" aria-label="Primary navigation">
     <div class="hud-top">
       <a class="logo scramble" href="#top">WAYLON.DESIGN</a>
