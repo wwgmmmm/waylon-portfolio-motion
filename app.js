@@ -10,20 +10,20 @@ import sticker10Url from "./assets/reference/stickers/s_10.png";
 import sticker11Url from "./assets/reference/stickers/s_11.png";
 
 const projects = [
-  {title:"VOLVO EM90",year:"RECENT",type:"MEDIA EXPERIENCE",cover:"assets/portfolio/works/01-volvo-em90/cover.jpg"},
-  {title:"VOLVO S90",year:"2025",type:"LAUNCH EVENT",cover:"assets/portfolio/works/04-volvo-s90/cover.jpg"},
-  {title:"MCLAREN",year:"2025",type:"BRAND RALLY",cover:"assets/portfolio/works/06-mclaren/cover.jpg",images:["assets/portfolio/works/06-mclaren/detail-01.jpg","assets/portfolio/works/06-mclaren/detail-02.jpg"]},
-  {title:"ZONGHENG G700",year:"RECENT",type:"PRODUCT LAUNCH",cover:"assets/portfolio/works/05-jietu-zongheng/cover.jpg"},
-  {title:"VOYAH",year:"RECENT",type:"BRAND EVENT",cover:"assets/portfolio/works/07-voyah/cover.jpg"},
-  {title:"AVATR 07L",year:"2026",type:"MEDIA EXPERIENCE",cover:"assets/portfolio/works/08-avater-07l/cover.jpg"},
-  {title:"LYNK&CO 10TH ANNIVERSARY",year:"RECENT",type:"ANNIVERSARY VISUAL",cover:"assets/portfolio/works/09-lynk-10th/cover.jpg",images:["assets/portfolio/works/09-lynk-10th/detail-01.jpg","assets/portfolio/works/09-lynk-10th/detail-03.jpg","assets/portfolio/works/09-lynk-10th/detail-05.jpg"]},
-  {title:"ZEEKR AUTO SHOW",year:"2026",type:"AUTO SHOW VISUAL",cover:"assets/portfolio/works/10-zeekr-auto-show/cover.jpg"},
-  {title:"TEDATONG",year:"RECENT",type:"BRAND VISUAL",cover:"assets/portfolio/works/03-tedatong/cover.jpg"},
-  {title:"UX STUDIO SHANGHAI",year:"RECENT",type:"BRAND EVENT",cover:"assets/portfolio/works/11-ux-studio-shanghai/cover.jpg"},
-  {title:"VOLVO EX30",year:"RECENT",type:"BRAND ACTIVATION",cover:"assets/portfolio/works/02-volvo-ex30/cover.jpg"},
-  {title:"LOTUS",year:"ARCHIVE",type:"TRACK DAY",cover:"assets/portfolio/project1/cover.jpg",images:["assets/portfolio/project1/detail1.jpg","assets/portfolio/project1/detail2.jpg","assets/portfolio/project1/detail3.jpg","assets/portfolio/project1/detail4.jpg"]},
-  {title:"VOLVO C40",year:"ARCHIVE",type:"CAMPAIGN VISUAL",cover:"assets/portfolio/project2/cover.jpg",images:["assets/portfolio/project2/detail1.jpg","assets/portfolio/project2/detail2.jpg","assets/portfolio/project2/detail3.jpg"]},
-  {title:"VOLVO XC60",year:"ARCHIVE",type:"LAUNCH EVENT",cover:"assets/portfolio/project3/cover.jpg",images:["assets/portfolio/project3/detail1.jpg","assets/portfolio/project3/detail2.jpg","assets/portfolio/project3/detail3.jpg"]}
+  {title:"VOLVO EM90",year:"RECENT",type:"MEDIA EXPERIENCE",cover:"assets/portfolio/works/01-volvo-em90/cover.webp"},
+  {title:"VOLVO S90",year:"2025",type:"LAUNCH EVENT",cover:"assets/portfolio/works/04-volvo-s90/cover.webp"},
+  {title:"MCLAREN",year:"2025",type:"BRAND RALLY",cover:"assets/portfolio/works/06-mclaren/cover.webp",images:["assets/portfolio/works/06-mclaren/detail-01.webp","assets/portfolio/works/06-mclaren/detail-02.webp"]},
+  {title:"ZONGHENG G700",year:"RECENT",type:"PRODUCT LAUNCH",cover:"assets/portfolio/works/05-jietu-zongheng/cover.webp"},
+  {title:"VOYAH",year:"RECENT",type:"BRAND EVENT",cover:"assets/portfolio/works/07-voyah/cover.webp"},
+  {title:"AVATR 07L",year:"2026",type:"MEDIA EXPERIENCE",cover:"assets/portfolio/works/08-avater-07l/cover.webp"},
+  {title:"LYNK&CO 10TH ANNIVERSARY",year:"RECENT",type:"ANNIVERSARY VISUAL",cover:"assets/portfolio/works/09-lynk-10th/cover.webp",images:["assets/portfolio/works/09-lynk-10th/detail-01.webp","assets/portfolio/works/09-lynk-10th/detail-03.webp","assets/portfolio/works/09-lynk-10th/detail-05.webp"]},
+  {title:"ZEEKR AUTO SHOW",year:"2026",type:"AUTO SHOW VISUAL",cover:"assets/portfolio/works/10-zeekr-auto-show/cover.webp"},
+  {title:"TEDATONG",year:"RECENT",type:"BRAND VISUAL",cover:"assets/portfolio/works/03-tedatong/cover.webp"},
+  {title:"UX STUDIO SHANGHAI",year:"RECENT",type:"BRAND EVENT",cover:"assets/portfolio/works/11-ux-studio-shanghai/cover.webp"},
+  {title:"VOLVO EX30",year:"RECENT",type:"BRAND ACTIVATION",cover:"assets/portfolio/works/02-volvo-ex30/cover.webp"},
+  {title:"LOTUS",year:"ARCHIVE",type:"TRACK DAY",cover:"assets/portfolio/project1/cover.webp",images:["assets/portfolio/project1/detail1.webp","assets/portfolio/project1/detail2.webp","assets/portfolio/project1/detail3.webp","assets/portfolio/project1/detail4.webp"]},
+  {title:"VOLVO C40",year:"ARCHIVE",type:"CAMPAIGN VISUAL",cover:"assets/portfolio/project2/cover.webp",images:["assets/portfolio/project2/detail1.webp","assets/portfolio/project2/detail2.webp","assets/portfolio/project2/detail3.webp"]},
+  {title:"VOLVO XC60",year:"ARCHIVE",type:"LAUNCH EVENT",cover:"assets/portfolio/project3/cover.webp",images:["assets/portfolio/project3/detail1.webp","assets/portfolio/project3/detail2.webp","assets/portfolio/project3/detail3.webp"]}
 ];
 
 const workGrid = document.getElementById("work-grid");
@@ -31,7 +31,8 @@ projects.forEach((project, index) => {
   const article = document.createElement("article");
   article.className = "project";
   article.tabIndex = 0;
-  article.innerHTML = `<div class="project-image"><span class="project-tag">${project.type}</span><img src="${project.cover}" alt="${project.title}" loading="${index < 2 ? "eager" : "lazy"}" decoding="async"></div><div class="project-meta"><span>${project.title}</span><span>${project.year}</span></div>`;
+  const mobileCover = project.cover.replace(/\.webp$/, "-960.webp");
+  article.innerHTML = `<div class="project-image"><span class="project-tag">${project.type}</span><img src="${project.cover}" srcset="${mobileCover} 960w, ${project.cover} 1800w" sizes="(max-width:760px) 100vw, 84vw" alt="${project.title}" loading="lazy" decoding="async"></div><div class="project-meta"><span>${project.title}</span><span>${project.year}</span></div>`;
   article.addEventListener("click", () => openProject(project));
   article.addEventListener("keydown", event => { if (event.key === "Enter") openProject(project); });
   workGrid.appendChild(article);
@@ -52,21 +53,21 @@ document.getElementById("modal-close").addEventListener("click", closeProject);
 document.addEventListener("keydown", event => { if (event.key === "Escape" && !modal.hidden) closeProject(); });
 
 function buildGrid(groupSelector, columns) {
-  const group = document.querySelector(groupSelector), rows = [33.3, 67.8], namespace = "http://www.w3.org/2000/svg";
+  const group = document.querySelector(groupSelector), rows = [33.3, 67.8], namespace = "http://www.w3.org/2000/svg", gapX = 13 / innerWidth * 100, gapY = 13 / innerHeight * 100, crossX = 6 / innerWidth * 100, crossY = 6 / innerHeight * 100; group.replaceChildren();
   const path = (data, className = "") => { const element = document.createElementNS(namespace, "path"); element.setAttribute("d", data); if (className) element.setAttribute("class", className); group.appendChild(element); };
-  columns.forEach(x => { let start = 0; rows.forEach(y => { path(`M${x} ${start}V${y - 1.25}`); start = y + 1.25; }); path(`M${x} ${start}V100`); });
-  rows.forEach(y => { let start = 0; columns.forEach(x => { path(`M${start} ${y}H${x - 1.25}`); start = x + 1.25; }); path(`M${start} ${y}H100`); });
-  columns.forEach(x => rows.forEach(y => path(`M${x - .48} ${y}H${x + .48}M${x} ${y - .72}V${y + .72}`, "grid-cross")));
+  columns.forEach(x => { let start = 0; rows.forEach(y => { path(`M${x} ${start}V${y - gapY}`); start = y + gapY; }); path(`M${x} ${start}V100`); });
+  rows.forEach(y => { let start = 0; columns.forEach(x => { path(`M${start} ${y}H${x - gapX}`); start = x + gapX; }); path(`M${start} ${y}H100`); });
+  columns.forEach(x => rows.forEach(y => path(`M${x - crossX} ${y}H${x + crossX}M${x} ${y - crossY}V${y + crossY}`, "grid-cross")));
 }
-buildGrid(".desktop-grid", [3.9, 34.7, 65.4, 96.1]);
-buildGrid(".mobile-grid", [4, 50, 96]);
+function rebuildGrid() { buildGrid(".desktop-grid", [3.9, 34.7, 65.4, 96.1]); buildGrid(".mobile-grid", [4, 50, 96]); }
+rebuildGrid();
 
 const canvas = document.getElementById("scene");
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance" });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 1.7)); renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.setPixelRatio(Math.min(devicePixelRatio, innerWidth < 760 ? 1.25 : 1.5)); renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.08;
 const cursorRenderer = new THREE.WebGLRenderer({ canvas: document.getElementById("cursor-scene"), antialias: true, alpha: true, powerPreference: "high-performance" });
-cursorRenderer.setPixelRatio(Math.min(devicePixelRatio, 1.7)); cursorRenderer.outputColorSpace = THREE.SRGBColorSpace; cursorRenderer.toneMapping = THREE.ACESFilmicToneMapping; cursorRenderer.toneMappingExposure = 1.08; cursorRenderer.setClearColor(0x000000, 0);
+cursorRenderer.setPixelRatio(Math.min(devicePixelRatio, 1.15)); cursorRenderer.outputColorSpace = THREE.SRGBColorSpace; cursorRenderer.toneMapping = THREE.ACESFilmicToneMapping; cursorRenderer.toneMappingExposure = 1.08; cursorRenderer.setClearColor(0x000000, 0);
 const scene = new THREE.Scene(); scene.background = new THREE.Color(0x07144d);
 const cursorScene = new THREE.Scene(); cursorScene.add(new THREE.HemisphereLight(0xffffff, 0x3867a8, 3.4)); const cursorLight = new THREE.DirectionalLight(0xffffff, 4.5); cursorLight.position.set(-3, 5, 6); cursorScene.add(cursorLight);
 const camera = new THREE.PerspectiveCamera(34, innerWidth / innerHeight, .1, 100); camera.position.z = 8;
@@ -100,7 +101,7 @@ const stickerGroups = { hero: [], end: [] }, stickerLoader = new THREE.TextureLo
 function createSticker(group, src, x, scale, phase, speed) {
   const texture = stickerLoader.load(src, loaded => { loaded.colorSpace = THREE.SRGBColorSpace; loaded.needsUpdate = true; sticker.userData.aspect = loaded.image.width / Math.max(loaded.image.height, 1); });
   const material = new THREE.MeshBasicMaterial({ map: texture, transparent: false, opacity: 1, alphaTest: .075, depthWrite: true, depthTest: true, side: THREE.DoubleSide, toneMapped: false });
-  const sticker = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material); sticker.scale.set(scale, scale, 1); sticker.position.set(x, 4, -.72); sticker.renderOrder = -2; sticker.userData = { x, phase, speed, baseScale: scale, aspect: 1 }; stickerGroups[group].push(sticker); scene.add(sticker); return sticker;
+  const sticker = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material); sticker.scale.set(scale, scale, 1); sticker.position.set(x, 4, -.72); sticker.renderOrder = -2; sticker.visible = group === "hero"; sticker.userData = { x, phase, speed, baseScale: scale, aspect: 1 }; stickerGroups[group].push(sticker); scene.add(sticker); return sticker;
 }
 createSticker("hero", sticker05Url, -2.7, .72, .4, .00013);
 createSticker("hero", sticker08Url, 1.75, .92, 3.1, .00011);
@@ -122,14 +123,14 @@ const liquidBump = createLiquidBumpTexture();
 function applyWaterMaterial(object) {
   object.traverse(child => {
     if (!child.isMesh) return;
-    child.material = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: false, opacity: 1, transmission: 1, thickness: .78, ior: 1.33, roughness: .055, metalness: 0, clearcoat: .22, clearcoatRoughness: .12, specularIntensity: .48, attenuationColor: new THREE.Color(0xd2deff), attenuationDistance: 30, dispersion: .18, envMapIntensity: .72, bumpMap: liquidBump, bumpScale: .135, depthWrite: true, side: THREE.FrontSide });
+    child.material = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: false, opacity: 1, transmission: 1, thickness: .92, ior: 1.36, roughness: .065, metalness: 0, clearcoat: .08, clearcoatRoughness: .2, specularIntensity: .32, attenuationColor: new THREE.Color(0xe0e8ff), attenuationDistance: 42, dispersion: .28, envMapIntensity: .5, bumpMap: liquidBump, bumpScale: .22, depthWrite: true, side: THREE.FrontSide });
   });
 }
-function setCursorOpacity(opacity) { if (!cursor3d) return; cursor3d.traverse(child => { if (child.isMesh) { child.material.transparent = true; child.material.opacity = opacity; child.material.depthWrite = opacity > .98; } }); }
+function setCursorOpacity(opacity) { if (!cursor3d) return; cursor3d.traverse(child => { if (child.isMesh) child.material.opacity = opacity; }); }
 let hello, cursor3d;
 const modelsReady = Promise.all([
   loadModel(helloModelUrl).then(model => { hello = normalizeModel(model, 5.1); applyWaterMaterial(hello); hello.position.set(.15, .15, 0); hello.rotation.set(-.08, -.12, -.03); scene.add(hello); }),
-  loadModel(cursorModelUrl).then(model => { cursor3d = normalizeModel(model, .48); cursor3d.position.set(3.1, -1.7, .4); cursor3d.rotation.set(-.2, .2, -.18); cursor3d.traverse(child => { if (child.isMesh) { child.material = child.material.clone(); child.material.color?.set(0x168dff); child.material.metalness = .08; child.material.roughness = .22; child.material.transparent = true; child.material.opacity = 1; } }); cursorScene.add(cursor3d); })
+  loadModel(cursorModelUrl).then(model => { cursor3d = normalizeModel(model, .48); cursor3d.position.set(3.1, -1.7, .4); cursor3d.rotation.set(-.2, .2, -.18); cursor3d.traverse(child => { if (child.isMesh) { child.material = child.material.clone(); child.material.color?.set(0x168dff); child.material.metalness = .08; child.material.roughness = .22; child.material.transparent = true; child.material.opacity = 1; child.material.depthWrite = false; } }); cursorScene.add(cursor3d); })
 ]);
 
 const starGeometry = new THREE.BufferGeometry(), starPoints = [], starColors = [], starAlphas = [], color = new THREE.Color();
@@ -142,7 +143,7 @@ const starsNear = new THREE.LineSegments(starGeometry.clone(), trailMaterial());
 
 const pointer = { x: 0, y: 0 };
 addEventListener("pointermove", event => { pointer.x = event.clientX / innerWidth * 2 - 1; pointer.y = -(event.clientY / innerHeight * 2 - 1); });
-function resize() { renderer.setSize(innerWidth, innerHeight, false); cursorRenderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); bgPlane.scale.set(innerWidth / Math.max(innerHeight, 1), 1, 1); if (hello?.userData.baseScale) { const scale = hello.userData.baseScale * (innerWidth < 760 ? .54 : 1); hello.scale.setScalar(scale); hello.position.y = innerWidth < 760 ? .05 : .15; } if (cursor3d?.userData.baseScale) { const scale = cursor3d.userData.baseScale * (innerWidth < 760 ? .72 : 1); cursor3d.scale.setScalar(scale); cursor3d.position.x = innerWidth < 760 ? 1.2 : 3.1; } }
+function resize() { renderer.setPixelRatio(Math.min(devicePixelRatio, innerWidth < 760 ? 1.25 : 1.5)); renderer.setSize(innerWidth, innerHeight, false); cursorRenderer.setPixelRatio(Math.min(devicePixelRatio, 1.15)); cursorRenderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); bgPlane.scale.set(innerWidth / Math.max(innerHeight, 1), 1, 1); rebuildGrid(); if (hello?.userData.baseScale) { const scale = hello.userData.baseScale * (innerWidth < 760 ? .4 : 1); hello.scale.setScalar(scale); hello.position.x = innerWidth < 760 ? -.05 : .15; hello.position.y = innerWidth < 760 ? .05 : .15; } if (cursor3d?.userData.baseScale) { const scale = cursor3d.userData.baseScale * (innerWidth < 760 ? .72 : 1); cursor3d.scale.setScalar(scale); cursor3d.position.x = innerWidth < 760 ? .25 : 3.1; } }
 addEventListener("resize", resize); resize();
 
 const scroller = document.getElementById("scroller");
@@ -164,13 +165,13 @@ if (!reducedMotion) {
 
 let scenePhase = 0, cursorLocked = false;
 const skyColor = new THREE.Color(0x07144d), blackColor = new THREE.Color(0x000000);
-ScrollTrigger.create({ trigger: ".hero", start: "top top", end: "bottom top", onEnterBack() { scene.background.copy(skyColor); bgMaterial.opacity = 1; setStickerOpacity("hero", .96); if (cursor3d) cursor3d.visible = true; }, onUpdate(self) { const p = self.progress, fade = Math.max(0, Math.min(1, (p - .08) / .78)), stickerFade = Math.max(0, Math.min(1, (p - .12) / .7)), dots = Math.max(0, Math.min(1, (p - .58) / .42)); scene.background.copy(skyColor); bgMaterial.opacity = 1; setPixelTransition(dots, "#000000"); setStickerOpacity("hero", .96 * (1 - stickerFade)); if (hello) { hello.position.y = .15 + p * 2.7; hello.rotation.y = -.12 + p * .36; } if (cursor3d) { cursor3d.visible = fade < .999; setCursorOpacity(1 - fade); cursor3d.position.y = -1.7 + p * 1.25; } }, onLeave() { scene.background.copy(blackColor); bgMaterial.opacity = 0; setPixelTransition(0, "#000000"); setStickerOpacity("hero", 0); if (cursor3d) { cursor3d.visible = false; setCursorOpacity(1); } } });
-ScrollTrigger.create({ trigger: ".about", start: "top 99%", onEnter() { scene.background.copy(blackColor); bgMaterial.opacity = 0; setPixelTransition(0, "#000000"); }, onLeaveBack() { setPixelTransition(1, "#000000"); } });
+ScrollTrigger.create({ trigger: ".hero", start: "top top", end: "bottom top", onEnterBack() { pixelTransition.classList.add("protect-content"); scene.background.copy(skyColor); bgMaterial.opacity = 1; setStickerOpacity("hero", .96); if (cursor3d) cursor3d.visible = true; }, onUpdate(self) { pixelTransition.classList.add("protect-content"); const p = self.progress, fade = Math.max(0, Math.min(1, (p - .08) / .78)), stickerFade = Math.max(0, Math.min(1, (p - .12) / .7)), dots = Math.max(0, Math.min(1, (p - .58) / .42)); scene.background.copy(skyColor); bgMaterial.opacity = 1; setPixelTransition(dots, "#000000"); setStickerOpacity("hero", .96 * (1 - stickerFade)); if (hello) { hello.position.y = (innerWidth < 760 ? .05 : .15) + p * 2.7; hello.rotation.y = -.12 + p * .36; } if (cursor3d) { cursor3d.visible = fade < .999; setCursorOpacity(1 - fade); cursor3d.position.y = -1.7 + p * 1.25; } }, onLeave() { scene.background.copy(blackColor); bgMaterial.opacity = 0; setPixelTransition(0, "#000000"); setStickerOpacity("hero", 0); if (cursor3d && scenePhase === 0) { cursor3d.visible = false; setCursorOpacity(1); } } });
+ScrollTrigger.create({ trigger: ".about", start: "top 99%", onEnter() { scene.background.copy(blackColor); bgMaterial.opacity = 0; setPixelTransition(0, "#000000"); setStickerOpacity("hero", 0); if (cursor3d && scenePhase === 0) cursor3d.visible = false; }, onLeaveBack() { setPixelTransition(1, "#000000"); } });
 ScrollTrigger.create({ trigger: ".work", start: "top bottom", end: "bottom top", onUpdate() { scene.background.copy(blackColor); bgMaterial.opacity = 0; } });
-ScrollTrigger.create({ trigger: ".manifesto-wrap", start: "top bottom+=1200", end: "top top", onEnter() { if (cursor3d) cursor3d.visible = true; }, onUpdate() { scene.background.copy(blackColor); bgMaterial.opacity = 0; setPixelTransition(0, "#000000"); if (!cursor3d) return; const base = cursor3d.userData.baseScale * (innerWidth < 760 ? .72 : 1); cursorLocked = true; cursor3d.visible = true; setCursorOpacity(1); cursor3d.scale.setScalar(base * 1.18); cursor3d.position.set(0, 1.72, .4); cursor3d.rotation.set(-.2, .2, .04); }, onLeaveBack() { cursorLocked = false; if (cursor3d) cursor3d.visible = false; } });
-ScrollTrigger.create({ trigger: ".manifesto-wrap", start: "top top", end: "bottom bottom", onEnter: () => { scenePhase = 1; cursorLocked = true; }, onEnterBack: () => { scenePhase = 1; cursorLocked = true; }, onLeave: () => { scenePhase = 2; cursorLocked = true; scene.background.copy(skyColor); bgMaterial.opacity = .38; setPixelTransition(0, "#07144d"); setStickerOpacity("end", .92); }, onLeaveBack: () => { scenePhase = 0; cursorLocked = false; setStickerOpacity("end", 0); }, onUpdate(self) {
+ScrollTrigger.create({ trigger: ".manifesto-wrap", start: "top 70%", end: "top top", onEnter() { if (!cursor3d) return; const base = cursor3d.userData.baseScale * (innerWidth < 760 ? .72 : 1); cursorLocked = true; cursor3d.visible = true; setCursorOpacity(1); cursor3d.scale.setScalar(base * 1.18); cursor3d.position.set(0, 1.72, .4); cursor3d.rotation.set(-.2, .2, .04); }, onEnterBack() { if (cursor3d) cursor3d.visible = true; }, onLeaveBack() { cursorLocked = false; if (cursor3d) cursor3d.visible = false; } });
+ScrollTrigger.create({ trigger: ".manifesto-wrap", start: "top top", end: "bottom bottom", onEnter: () => { scenePhase = 1; cursorLocked = true; }, onEnterBack: () => { scenePhase = 1; cursorLocked = true; }, onLeave: () => { scenePhase = 2; cursorLocked = true; scene.background.copy(skyColor); bgMaterial.opacity = .38; setPixelTransition(0, "#07144d"); setStickerOpacity("end", .92); }, onLeaveBack: () => { scenePhase = 0; cursorLocked = false; setStickerOpacity("end", 0); if (cursor3d) cursor3d.visible = false; }, onUpdate(self) {
   const p = self.progress;
-  scene.background.copy(blackColor); bgMaterial.opacity = 0; const endDots = Math.max(0, Math.min(1, (p - .94) / .06)); setPixelTransition(endDots, "#07144d");
+  pixelTransition.classList.remove("protect-content"); scene.background.copy(blackColor); bgMaterial.opacity = 0; const endDots = Math.max(0, Math.min(1, (p - .94) / .06)); setPixelTransition(endDots, "#07144d");
   const density = Math.max(0, Math.min(1, (p - .18) / .54)), visibleLines = Math.round(18 + density * 502), exit = Math.max(0, Math.min(1, (p - .84) / .128)), starOpacity = p < .18 ? 0 : p < .24 ? (p - .18) / .06 : 1 - exit, trailScale = THREE.MathUtils.lerp(1, .035, exit), farScale = (.24 + density * 2.95) * trailScale, nearScale = (.16 + density * 3.72) * trailScale; stars.geometry.setDrawRange(0, visibleLines * 2); starsNear.geometry.setDrawRange(0, Math.round(visibleLines * .58) * 2); stars.material.uniforms.uOpacity.value = starOpacity; starsNear.material.uniforms.uOpacity.value = starOpacity * .38; stars.rotation.z = Math.sin(p * 8.7) * .023 + Math.sin(p * 3.1) * .031; starsNear.rotation.z = stars.rotation.z + .028 + Math.sin(p * 6.2) * .012; stars.scale.set(farScale * (1 + Math.sin(p * 9) * .025), farScale * (.97 + Math.cos(p * 7) * .02), farScale); starsNear.scale.set(nearScale * (.98 + Math.cos(p * 8) * .02), nearScale * (1 + Math.sin(p * 6) * .025), nearScale);
   if (cursor3d) { const base = cursor3d.userData.baseScale * (innerWidth < 760 ? .72 : 1), frontX = -.2, frontY = .2, frontZ = .04; if (p < .065) { cursor3d.visible = true; setCursorOpacity(1); cursor3d.scale.setScalar(base * 1.18); cursor3d.position.set(0, 1.72, .4); cursor3d.rotation.set(frontX, frontY, frontZ); } else if (p < .16) { const raw = (p - .065) / .095, flip = raw * raw * (3 - 2 * raw); cursor3d.visible = true; setCursorOpacity(1); cursor3d.scale.setScalar(base * THREE.MathUtils.lerp(1.18, 34, flip)); cursor3d.position.set(0, 1.72, .4); cursor3d.rotation.set(frontX, frontY + Math.sin(flip * Math.PI) * .22, frontZ + flip * Math.PI * 2); } else if (p < .22) { const fade = (p - .16) / .06; cursor3d.visible = true; setCursorOpacity(1 - fade); cursor3d.scale.setScalar(base * 34); cursor3d.position.set(0, 1.72, .4); cursor3d.rotation.set(frontX, frontY, frontZ + Math.PI * 2); } else if (p < .84) { cursor3d.visible = false; setCursorOpacity(1); } else { const raw = (p - .84) / .128, shrink = Math.max(0, Math.min(1, raw)), smooth = shrink * shrink * (3 - 2 * shrink); cursor3d.visible = true; setCursorOpacity(1); cursor3d.scale.setScalar(base * THREE.MathUtils.lerp(34, 1, smooth)); cursor3d.position.set(0, 1.72, .4); cursor3d.rotation.set(frontX, frontY + Math.sin(smooth * Math.PI) * .2, frontZ + smooth * Math.PI * 2); } }
   gsap.set(".statement", { color: "#fff" });
@@ -184,7 +185,7 @@ ScrollTrigger.create({ trigger: ".manifesto-wrap", start: "top top", end: "botto
 ScrollTrigger.create({ start: 0, end: "max", onUpdate(self) { const rail = document.querySelector(".scroll-rail i"), ring = document.querySelector(".progress-value"), max = 168; gsap.set(rail, { y: self.progress * max }); ring.style.strokeDashoffset = String(1 - self.progress); document.getElementById("scroll-progress").setAttribute("aria-label", `Back to top, ${Math.round(self.progress * 100)}% viewed`); } });
 document.getElementById("scroll-progress").addEventListener("click", () => lenis.scrollTo(0, { duration: 1.25 }));
 
-function render() { requestAnimationFrame(render); const now = performance.now(), mobile = innerWidth < 760; liquidBump.offset.set(now * .000018 % 1, now * .000011 % 1); Object.values(stickerGroups).flat().forEach(sticker => { if (!sticker.visible) return; const travel = (now * sticker.userData.speed + sticker.userData.phase) % 9.2, size = sticker.userData.baseScale * (mobile ? .72 : 1); sticker.position.x = sticker.userData.x * (mobile ? .43 : 1) + Math.sin(now * .00035 + sticker.userData.phase) * (mobile ? .08 : .18); sticker.position.y = 4.35 - travel; sticker.scale.set(size * sticker.userData.aspect, size, 1); }); if (hello && scenePhase === 0) { hello.rotation.x += (pointer.y * .08 - hello.rotation.x) * .035; hello.rotation.y += (pointer.x * .14 - hello.rotation.y) * .035; } if (cursor3d && !cursorLocked && cursor3d.visible) { cursor3d.position.x += (((mobile ? 1.2 : 3.05) + pointer.x * .25) - cursor3d.position.x) * .04; cursor3d.position.y += (((mobile ? -1.3 : -1.7) + pointer.y * .2) - cursor3d.position.y) * .04; } renderer.render(scene, camera); cursorRenderer.render(cursorScene, camera); }
+function render() { requestAnimationFrame(render); const now = performance.now(), mobile = innerWidth < 760; liquidBump.offset.set(now * .000018 % 1, now * .000011 % 1); Object.values(stickerGroups).flat().forEach(sticker => { if (!sticker.visible) return; const travel = (now * sticker.userData.speed + sticker.userData.phase) % 9.2, size = sticker.userData.baseScale * (mobile ? .72 : 1); sticker.position.x = sticker.userData.x * (mobile ? .43 : 1) + Math.sin(now * .00035 + sticker.userData.phase) * (mobile ? .08 : .18); sticker.position.y = 4.35 - travel; sticker.scale.set(size * sticker.userData.aspect, size, 1); }); if (hello && scenePhase === 0) { hello.rotation.x += (pointer.y * .08 - hello.rotation.x) * .035; hello.rotation.y += (pointer.x * .14 - hello.rotation.y) * .035; } if (cursor3d && !cursorLocked && cursor3d.visible) { cursor3d.position.x += (((mobile ? .25 : 3.05) + pointer.x * .16) - cursor3d.position.x) * .04; cursor3d.position.y += (((mobile ? -1.3 : -1.7) + pointer.y * .2) - cursor3d.position.y) * .04; } renderer.render(scene, camera); if (cursor3d?.visible) cursorRenderer.render(cursorScene, camera); else cursorRenderer.clear(); }
 render();
 
 const themeButton = document.getElementById("theme-button"), mobileTheme = document.getElementById("mobile-theme"); let themeIndex = 0;
