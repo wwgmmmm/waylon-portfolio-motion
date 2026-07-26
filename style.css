@@ -98,6 +98,5 @@ body{background:#000;color:#fff}
 .grid-overlay path{fill:none;stroke:rgba(255,255,255,.14);stroke-width:1;vector-effect:non-scaling-stroke}
 .grid-overlay .grid-cross{stroke:rgba(255,255,255,.44)}
 .mobile-grid{display:none}
-.project{content-visibility:auto;contain-intrinsic-size:auto 620px}
 @media(max-width:760px){.desktop-grid{display:none}.mobile-grid{display:block}}
 .manifesto-lead .statement{transform:translateY(9vh)}

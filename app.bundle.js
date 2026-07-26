@@ -14050,14 +14050,28 @@
       child.material = new Kl({ color: 16777215, transparent: false, opacity: 1, transmission: 1, thickness: 0.92, ior: 1.36, roughness: 0.065, metalness: 0, clearcoat: 0.08, clearcoatRoughness: 0.2, specularIntensity: 0.32, attenuationColor: new Pr(14739711), attenuationDistance: 42, dispersion: 0.28, envMapIntensity: 0.5, bumpMap: liquidBump, bumpScale: 0.22, depthWrite: true, side: u });
     });
   }
-  function setCursorOpacity(opacity) {
-    if (!cursor3d) return;
-    cursor3d.traverse((child) => {
+  function setCursorOpacity(cursor, opacity) {
+    if (!cursor) return;
+    cursor.traverse((child) => {
       if (child.isMesh) child.material.opacity = opacity;
+    });
+  }
+  function styleCursor(cursor) {
+    cursor.traverse((child) => {
+      if (child.isMesh) {
+        child.material = child.material.clone();
+        child.material.color?.set(1478143);
+        child.material.metalness = 0.08;
+        child.material.roughness = 0.22;
+        child.material.transparent = true;
+        child.material.opacity = 1;
+        child.material.depthWrite = false;
+      }
     });
   }
   var hello;
   var cursor3d;
+  var manifestoCursor;
   var modelsReady = Promise.all([
     loadModel(hello_default).then((model) => {
       hello = normalizeModel(model, 5.1);
@@ -14068,20 +14082,13 @@
     }),
     loadModel(cursor_default).then((model) => {
       cursor3d = normalizeModel(model, 0.48);
+      styleCursor(cursor3d);
       cursor3d.position.set(3.1, -1.7, 0.4);
       cursor3d.rotation.set(-0.2, 0.2, -0.18);
-      cursor3d.traverse((child) => {
-        if (child.isMesh) {
-          child.material = child.material.clone();
-          child.material.color?.set(1478143);
-          child.material.metalness = 0.08;
-          child.material.roughness = 0.22;
-          child.material.transparent = true;
-          child.material.opacity = 1;
-          child.material.depthWrite = false;
-        }
-      });
-      cursorScene.add(cursor3d);
+      manifestoCursor = cursor3d.clone(true);
+      styleCursor(manifestoCursor);
+      manifestoCursor.visible = false;
+      cursorScene.add(cursor3d, manifestoCursor);
     })
   ]);
   var starGeometry = new Wn();
@@ -14139,8 +14146,8 @@
   addEventListener("resize", resize);
   resize();
   var scroller = document.getElementById("scroller");
-  var manifestoLead = document.querySelector(".manifesto-lead");
   var manifestoWrap = document.querySelector(".manifesto-wrap");
+  var manifestoTitle = document.querySelector(".statement-a");
   var lenis = new Lenis({ wrapper: scroller, content: scroller.firstElementChild, duration: 1.15, smoothWheel: true });
   lenis.on("scroll", ScrollTrigger.update);
   gsap.ticker.add((time) => lenis.raf(time * 1e3));
@@ -14169,7 +14176,6 @@
     ScrollTrigger.batch(".project", { start: "top 88%", once: true, onEnter: (batch) => gsap.from(batch, { y: 55, autoAlpha: 0, stagger: 0.08, duration: 0.75, ease: "power3.out" }) });
   }
   var scenePhase = 0;
-  var cursorLocked = false;
   var skyColor = new Pr(463949);
   var blackColor = new Pr(0);
   ScrollTrigger.create({ trigger: ".hero", start: "top top", end: "bottom top", onEnterBack() {
@@ -14177,6 +14183,7 @@
     scene.background.copy(skyColor);
     bgMaterial.opacity = 1;
     setStickerOpacity("hero", 0.96);
+    if (manifestoCursor) manifestoCursor.visible = false;
     if (cursor3d) cursor3d.visible = true;
   }, onUpdate(self2) {
     pixelTransition.classList.add("protect-content");
@@ -14191,7 +14198,7 @@
     }
     if (cursor3d) {
       cursor3d.visible = fade < 0.999;
-      setCursorOpacity(1 - fade);
+      setCursorOpacity(cursor3d, 1 - fade);
       cursor3d.position.y = -1.7 + p2 * 1.25;
     }
   }, onLeave() {
@@ -14199,9 +14206,9 @@
     bgMaterial.opacity = 0;
     setPixelTransition(0, "#000000");
     setStickerOpacity("hero", 0);
-    if (cursor3d && scenePhase === 0) {
+    if (cursor3d) {
       cursor3d.visible = false;
-      setCursorOpacity(1);
+      setCursorOpacity(cursor3d, 1);
     }
   } });
   ScrollTrigger.create({ trigger: ".about", start: "top 99%", onEnter() {
@@ -14217,29 +14224,20 @@
     scene.background.copy(blackColor);
     bgMaterial.opacity = 0;
   } });
-  function setManifestoCursor() {
-    if (!cursor3d) return;
-    const base = cursor3d.userData.baseScale * (innerWidth < 760 ? 0.72 : 1);
-    cursorLocked = true;
-    cursor3d.visible = true;
-    setCursorOpacity(1);
-    cursor3d.scale.setScalar(base * 1.18);
-    cursor3d.position.set(0, 1.72, 0.4);
-    cursor3d.rotation.set(-0.2, 0.2, 0.04);
+  function titleCursorY() {
+    const rect = manifestoTitle.getBoundingClientRect(), screenY = rect.top - (innerWidth < 760 ? 52 : 72), distance = camera.position.z - 0.4, worldHeight = 2 * Math.tan(Ss.degToRad(camera.fov * 0.5)) * distance;
+    return (0.5 - screenY / innerHeight) * worldHeight;
   }
-  ScrollTrigger.create({ trigger: ".manifesto-lead", start: "top 60%", endTrigger: ".manifesto-wrap", end: "top top", onEnter: setManifestoCursor, onEnterBack: setManifestoCursor, onUpdate: setManifestoCursor, onLeaveBack() {
-    cursorLocked = false;
-    if (cursor3d) cursor3d.visible = false;
-  } });
-  ScrollTrigger.create({ trigger: ".manifesto-wrap", start: "top top", end: "bottom bottom", onEnter: () => {
+  ScrollTrigger.create({ trigger: ".manifesto-wrap", start: "top top", end: () => ScrollTrigger.maxScroll(scroller), invalidateOnRefresh: true, onEnter: () => {
     scenePhase = 1;
-    cursorLocked = true;
+    if (cursor3d) cursor3d.visible = false;
+    if (manifestoCursor) manifestoCursor.visible = true;
   }, onEnterBack: () => {
     scenePhase = 1;
-    cursorLocked = true;
+    if (cursor3d) cursor3d.visible = false;
+    if (manifestoCursor) manifestoCursor.visible = true;
   }, onLeave: () => {
     scenePhase = 2;
-    cursorLocked = true;
     scene.background.copy(skyColor);
     bgMaterial.opacity = 0.38;
     setPixelTransition(0, "#07144d");
@@ -14247,64 +14245,67 @@
   }, onLeaveBack: () => {
     scenePhase = 0;
     setStickerOpacity("end", 0);
-    setManifestoCursor();
+    stars.material.uniforms.uOpacity.value = 0;
+    starsNear.material.uniforms.uOpacity.value = 0;
+    if (manifestoCursor) manifestoCursor.visible = false;
   }, onUpdate(self2) {
     const p2 = self2.progress;
     pixelTransition.classList.remove("protect-content");
     scene.background.copy(blackColor);
     bgMaterial.opacity = 0;
-    const endDots = Math.max(0, Math.min(1, (p2 - 0.94) / 0.06));
+    const endDots = Math.max(0, Math.min(1, (p2 - 0.91) / 0.09));
     setPixelTransition(endDots, "#07144d");
-    const density = Math.max(0, Math.min(1, (p2 - 0.18) / 0.54)), visibleLines = Math.round(18 + density * 502), exit = Math.max(0, Math.min(1, (p2 - 0.84) / 0.128)), starOpacity = p2 < 0.18 ? 0 : p2 < 0.24 ? (p2 - 0.18) / 0.06 : 1 - exit, trailScale = Ss.lerp(1, 0.035, exit), farScale = (0.24 + density * 2.95) * trailScale, nearScale = (0.16 + density * 3.72) * trailScale;
+    const density = Math.max(0, Math.min(1, (p2 - 0.25) / 0.48)), visibleLines = Math.round(18 + density * 502), exit = Math.max(0, Math.min(1, (p2 - 0.76) / 0.16)), starOpacity = p2 < 0.22 ? 0 : p2 < 0.3 ? (p2 - 0.22) / 0.08 : 1 - exit, trailScale = Ss.lerp(1, 0.035, exit), farScale = (0.24 + density * 2.95) * trailScale, nearScale = (0.16 + density * 3.72) * trailScale;
     stars.geometry.setDrawRange(0, visibleLines * 2);
     starsNear.geometry.setDrawRange(0, Math.round(visibleLines * 0.58) * 2);
-    stars.material.uniforms.uOpacity.value = starOpacity;
-    starsNear.material.uniforms.uOpacity.value = starOpacity * 0.38;
+    stars.material.uniforms.uOpacity.value = Math.max(0, starOpacity);
+    starsNear.material.uniforms.uOpacity.value = Math.max(0, starOpacity) * 0.38;
     stars.rotation.z = Math.sin(p2 * 8.7) * 0.023 + Math.sin(p2 * 3.1) * 0.031;
     starsNear.rotation.z = stars.rotation.z + 0.028 + Math.sin(p2 * 6.2) * 0.012;
     stars.scale.set(farScale * (1 + Math.sin(p2 * 9) * 0.025), farScale * (0.97 + Math.cos(p2 * 7) * 0.02), farScale);
     starsNear.scale.set(nearScale * (0.98 + Math.cos(p2 * 8) * 0.02), nearScale * (1 + Math.sin(p2 * 6) * 0.025), nearScale);
-    if (cursor3d) {
-      const base = cursor3d.userData.baseScale * (innerWidth < 760 ? 0.72 : 1), frontX = -0.2, frontY = 0.2, frontZ = 0.04;
-      if (p2 < 0.085) {
-        cursor3d.visible = true;
-        setCursorOpacity(1);
-        cursor3d.scale.setScalar(base * 1.18);
-        cursor3d.position.set(0, 1.72, 0.4);
-        cursor3d.rotation.set(frontX, frontY, frontZ);
-      } else if (p2 < 0.19) {
-        const raw = (p2 - 0.085) / 0.105, flip = raw * raw * (3 - 2 * raw);
-        cursor3d.visible = true;
-        setCursorOpacity(1);
-        cursor3d.scale.setScalar(base * Ss.lerp(1.18, 34, flip));
-        cursor3d.position.set(0, 1.72, 0.4);
-        cursor3d.rotation.set(frontX, frontY + Math.sin(flip * Math.PI) * 0.22, frontZ + flip * Math.PI * 2);
-      } else if (p2 < 0.25) {
-        const fade = (p2 - 0.19) / 0.06;
-        cursor3d.visible = true;
-        setCursorOpacity(1 - fade);
-        cursor3d.scale.setScalar(base * 34);
-        cursor3d.position.set(0, 1.72, 0.4);
-        cursor3d.rotation.set(frontX, frontY, frontZ + Math.PI * 2);
-      } else if (p2 < 0.84) {
-        cursor3d.visible = false;
-        setCursorOpacity(1);
+    if (manifestoCursor) {
+      const base = manifestoCursor.userData.baseScale * (innerWidth < 760 ? 0.72 : 1), frontX = -0.2, frontY = 0.2, frontZ = 0.04, anchorY = titleCursorY();
+      if (p2 < 0.11) {
+        manifestoCursor.visible = true;
+        setCursorOpacity(manifestoCursor, 1);
+        manifestoCursor.scale.setScalar(base * 1.18);
+        manifestoCursor.position.set(0, anchorY, 0.4);
+        manifestoCursor.rotation.set(frontX, frontY, frontZ);
+      } else if (p2 < 0.23) {
+        const raw = (p2 - 0.11) / 0.12, flip = raw * raw * (3 - 2 * raw);
+        manifestoCursor.visible = true;
+        setCursorOpacity(manifestoCursor, 1);
+        manifestoCursor.scale.setScalar(base * Ss.lerp(1.18, 34, flip));
+        manifestoCursor.position.set(0, anchorY, 0.4);
+        manifestoCursor.rotation.set(frontX, frontY + Math.sin(flip * Math.PI) * 0.22, frontZ + flip * Math.PI * 2);
+      } else if (p2 < 0.29) {
+        const fade = (p2 - 0.23) / 0.06;
+        manifestoCursor.visible = true;
+        setCursorOpacity(manifestoCursor, 1 - fade);
+        manifestoCursor.scale.setScalar(base * 34);
+        manifestoCursor.position.set(0, anchorY, 0.4);
+        manifestoCursor.rotation.set(frontX, frontY, frontZ + Math.PI * 2);
+      } else if (p2 < 0.76) {
+        manifestoCursor.visible = false;
+        setCursorOpacity(manifestoCursor, 1);
       } else {
-        const raw = (p2 - 0.84) / 0.128, shrink = Math.max(0, Math.min(1, raw)), smooth = shrink * shrink * (3 - 2 * shrink);
-        cursor3d.visible = true;
-        setCursorOpacity(1);
-        cursor3d.scale.setScalar(base * Ss.lerp(34, 1, smooth));
-        cursor3d.position.set(0, 1.72, 0.4);
-        cursor3d.rotation.set(frontX, frontY + Math.sin(smooth * Math.PI) * 0.2, frontZ + smooth * Math.PI * 2);
+        const smooth = exit * exit * (3 - 2 * exit);
+        manifestoCursor.visible = true;
+        setCursorOpacity(manifestoCursor, 1);
+        manifestoCursor.scale.setScalar(base * Ss.lerp(34, 1, smooth));
+        manifestoCursor.position.set(0, 1.72, 0.4);
+        manifestoCursor.rotation.set(frontX, frontY + Math.sin(smooth * Math.PI) * 0.2, frontZ + smooth * Math.PI * 2);
       }
     }
     gsap.set(".statement", { color: "#fff" });
     const set = (selector, opacity) => gsap.set(selector, { opacity, scale: 0.9 + opacity * 0.1 });
-    set(".statement-b", p2 > 0.25 && p2 < 0.58 ? Math.min(1, (p2 - 0.25) * 10) * Math.min(1, (0.6 - p2) * 9) : 0);
-    const valueOpacity = p2 > 0.53 && p2 < 0.78 ? Math.min(1, (p2 - 0.53) * 8) * Math.min(1, (0.8 - p2) * 8) : 0;
+    set(".statement-a", p2 < 0.18 ? 1 - Math.max(0, Math.min(1, (p2 - 0.09) / 0.09)) : 0);
+    set(".statement-b", p2 > 0.29 && p2 < 0.57 ? Math.min(1, (p2 - 0.29) * 10) * Math.min(1, (0.59 - p2) * 9) : 0);
+    const valueOpacity = p2 > 0.52 && p2 < 0.74 ? Math.min(1, (p2 - 0.52) * 8) * Math.min(1, (0.76 - p2) * 8) : 0;
     gsap.set(".value", { opacity: valueOpacity });
-    set(".statement-c", p2 > 0.74 ? Math.min(1, (p2 - 0.74) * 7) * Math.min(1, (1 - p2) * 15) : 0);
-    const endReveal = Math.max(0, Math.min(1, (p2 - 0.962) / 0.038));
+    set(".statement-c", p2 > 0.69 && p2 < 0.9 ? Math.min(1, (p2 - 0.69) * 7) * Math.min(1, (0.91 - p2) * 12) : 0);
+    const endReveal = Math.max(0, Math.min(1, (p2 - 0.93) / 0.07));
     setStickerOpacity("end", endReveal * 0.92);
   } });
   ScrollTrigger.create({ start: 0, end: "max", onUpdate(self2) {
@@ -14325,22 +14326,16 @@
       sticker.position.y = 4.35 - travel;
       sticker.scale.set(size * sticker.userData.aspect, size, 1);
     });
-    const leadRect = manifestoLead.getBoundingClientRect(), wrapRect = manifestoWrap.getBoundingClientRect(), leadActive = scenePhase === 0 && leadRect.top < innerHeight * 0.6 && leadRect.bottom > 0 && wrapRect.top > 0;
-    if (leadActive) setManifestoCursor();
-    else if (scenePhase === 0 && cursorLocked && cursor3d) {
-      cursorLocked = false;
-      cursor3d.visible = false;
-    }
     if (hello && scenePhase === 0) {
       hello.rotation.x += (pointer.y * 0.08 - hello.rotation.x) * 0.035;
       hello.rotation.y += (pointer.x * 0.14 - hello.rotation.y) * 0.035;
     }
-    if (cursor3d && !cursorLocked && cursor3d.visible) {
+    if (cursor3d?.visible) {
       cursor3d.position.x += ((mobile ? 0.25 : 3.05) + pointer.x * 0.16 - cursor3d.position.x) * 0.04;
       cursor3d.position.y += ((mobile ? -1.3 : -1.7) + pointer.y * 0.2 - cursor3d.position.y) * 0.04;
     }
     renderer.render(scene, camera);
-    if (cursor3d?.visible) cursorRenderer.render(cursorScene, camera);
+    if (cursor3d?.visible || manifestoCursor?.visible) cursorRenderer.render(cursorScene, camera);
     else cursorRenderer.clear();
   }
   render();
