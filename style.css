@@ -44,7 +44,7 @@ body.theme-paper{--label:#000;--label2:rgba(0,0,0,.43)}body.theme-dark{--label:#
 
 /* Reference-led refinement: water type, falling stickers and archive pairing. */
 .scroll-progress{right:var(--pad-x);bottom:24px;width:20px;height:20px;padding:0}
-.scroll-progress circle{stroke-width:5}
+.scroll-progress circle{stroke-width:7}
 .progress-track{stroke:rgba(255,255,255,.28)}
 .progress-arrow{display:none}
 .sticker-shell{top:-24vh;bottom:auto;opacity:0;transform:none}
@@ -91,3 +91,10 @@ body{background:#000;color:#fff}
 .wechat-contact{position:absolute;z-index:3;right:var(--pad-x);bottom:calc(var(--pad-y) - 10px);display:grid;justify-items:center;gap:6px;color:#fff;font:11px Departure,var(--mono);letter-spacing:0}
 .wechat-contact img{display:block;width:112px;height:112px;object-fit:contain;background:#fff}
 @media(max-width:760px){.signature-word{font-size:20vw;transform:rotate(-5deg)}.about-visual{min-height:20vh}.project:nth-child(-n+10){grid-column:1/span 12}.project:nth-child(n+11):nth-child(odd){grid-column:1/span 6}.project:nth-child(n+11):nth-child(even){grid-column:7/span 6}.mobile-menu{padding:96px 16px 48px}.mobile-menu button{font-size:12vw}.contact-links{right:120px;bottom:58px;max-width:44%}.wechat-contact{right:16px;bottom:54px}.wechat-contact img{width:88px;height:88px}.pixel-transition{background-size:12px 12px}}
+
+#cursor-scene{position:fixed;inset:0;z-index:66;width:100%;height:100%;pointer-events:none}
+.grid-overlay{background:none!important;overflow:visible}
+.grid-overlay path{fill:none;stroke:rgba(255,255,255,.14);stroke-width:1;vector-effect:non-scaling-stroke}
+.grid-overlay .grid-cross{stroke:rgba(255,255,255,.44)}
+.mobile-grid{display:none}
+@media(max-width:760px){.desktop-grid{display:none}.mobile-grid{display:block}}

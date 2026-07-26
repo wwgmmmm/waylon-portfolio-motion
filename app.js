@@ -51,11 +51,24 @@ function closeProject() { modal.hidden = true; document.body.classList.remove("m
 document.getElementById("modal-close").addEventListener("click", closeProject);
 document.addEventListener("keydown", event => { if (event.key === "Escape" && !modal.hidden) closeProject(); });
 
+function buildGrid(groupSelector, columns) {
+  const group = document.querySelector(groupSelector), rows = [33.3, 67.8], namespace = "http://www.w3.org/2000/svg";
+  const path = (data, className = "") => { const element = document.createElementNS(namespace, "path"); element.setAttribute("d", data); if (className) element.setAttribute("class", className); group.appendChild(element); };
+  columns.forEach(x => { let start = 0; rows.forEach(y => { path(`M${x} ${start}V${y - 1.25}`); start = y + 1.25; }); path(`M${x} ${start}V100`); });
+  rows.forEach(y => { let start = 0; columns.forEach(x => { path(`M${start} ${y}H${x - 1.25}`); start = x + 1.25; }); path(`M${start} ${y}H100`); });
+  columns.forEach(x => rows.forEach(y => path(`M${x - .48} ${y}H${x + .48}M${x} ${y - .72}V${y + .72}`, "grid-cross")));
+}
+buildGrid(".desktop-grid", [3.9, 34.7, 65.4, 96.1]);
+buildGrid(".mobile-grid", [4, 50, 96]);
+
 const canvas = document.getElementById("scene");
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance" });
 renderer.setPixelRatio(Math.min(devicePixelRatio, 1.7)); renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.08;
+const cursorRenderer = new THREE.WebGLRenderer({ canvas: document.getElementById("cursor-scene"), antialias: true, alpha: true, powerPreference: "high-performance" });
+cursorRenderer.setPixelRatio(Math.min(devicePixelRatio, 1.7)); cursorRenderer.outputColorSpace = THREE.SRGBColorSpace; cursorRenderer.toneMapping = THREE.ACESFilmicToneMapping; cursorRenderer.toneMappingExposure = 1.08; cursorRenderer.setClearColor(0x000000, 0);
 const scene = new THREE.Scene(); scene.background = new THREE.Color(0x07144d);
+const cursorScene = new THREE.Scene(); cursorScene.add(new THREE.HemisphereLight(0xffffff, 0x3867a8, 3.4)); const cursorLight = new THREE.DirectionalLight(0xffffff, 4.5); cursorLight.position.set(-3, 5, 6); cursorScene.add(cursorLight);
 const camera = new THREE.PerspectiveCamera(34, innerWidth / innerHeight, .1, 100); camera.position.z = 8;
 scene.add(new THREE.HemisphereLight(0xffffff, 0x699bd0, 3.2));
 const keyLight = new THREE.DirectionalLight(0xffffff, 4); keyLight.position.set(-3, 5, 6); scene.add(keyLight);
@@ -64,10 +77,10 @@ const rimLight = new THREE.DirectionalLight(0x449cff, 5); rimLight.position.set(
 function createStudioEnvironment() {
   const environment = new THREE.Scene(); environment.background = new THREE.Color(0x061044);
   const panels = [
-    { color: 0xffffff, scale: [5, 2, 1], position: [-4, 3, 1], rotation: [0, .72, 0] },
+    { color: 0x86a7ff, scale: [5, 2, 1], position: [-4, 3, 1], rotation: [0, .72, 0] },
     { color: 0x7da4ff, scale: [4, 1.4, 1], position: [4, 1, 2], rotation: [0, -.82, 0] },
     { color: 0x274bff, scale: [7, 2, 1], position: [0, -4, 0], rotation: [-1.25, 0, 0] },
-    { color: 0xffffff, scale: [2, 6, 1], position: [0, 2, -4], rotation: [0, 0, 0] }
+    { color: 0x9ab7ff, scale: [2, 6, 1], position: [0, 2, -4], rotation: [0, 0, 0] }
   ];
   panels.forEach(({ color, scale, position, rotation }) => { const panel = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide })); panel.scale.set(...scale); panel.position.set(...position); panel.rotation.set(...rotation); environment.add(panel); });
   const pmrem = new THREE.PMREMGenerator(renderer); const target = pmrem.fromScene(environment, .06); pmrem.dispose(); environment.traverse(child => { child.geometry?.dispose(); child.material?.dispose(); }); return target.texture;
@@ -109,14 +122,14 @@ const liquidBump = createLiquidBumpTexture();
 function applyWaterMaterial(object) {
   object.traverse(child => {
     if (!child.isMesh) return;
-    child.material = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: false, opacity: 1, transmission: 1, thickness: .56, ior: 1.42, roughness: .025, metalness: 0, clearcoat: .72, clearcoatRoughness: .045, specularIntensity: 1, attenuationColor: new THREE.Color(0xaec2ff), attenuationDistance: 14, dispersion: .11, envMapIntensity: 1.8, bumpMap: liquidBump, bumpScale: .08, depthWrite: true, side: THREE.FrontSide });
+    child.material = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: false, opacity: 1, transmission: 1, thickness: .78, ior: 1.33, roughness: .055, metalness: 0, clearcoat: .22, clearcoatRoughness: .12, specularIntensity: .48, attenuationColor: new THREE.Color(0xd2deff), attenuationDistance: 30, dispersion: .18, envMapIntensity: .72, bumpMap: liquidBump, bumpScale: .135, depthWrite: true, side: THREE.FrontSide });
   });
 }
 function setCursorOpacity(opacity) { if (!cursor3d) return; cursor3d.traverse(child => { if (child.isMesh) { child.material.transparent = true; child.material.opacity = opacity; child.material.depthWrite = opacity > .98; } }); }
 let hello, cursor3d;
 const modelsReady = Promise.all([
   loadModel(helloModelUrl).then(model => { hello = normalizeModel(model, 5.1); applyWaterMaterial(hello); hello.position.set(.15, .15, 0); hello.rotation.set(-.08, -.12, -.03); scene.add(hello); }),
-  loadModel(cursorModelUrl).then(model => { cursor3d = normalizeModel(model, .48); cursor3d.position.set(3.1, -1.7, .4); cursor3d.rotation.set(-.2, .2, -.18); cursor3d.traverse(child => { if (child.isMesh) { child.material = child.material.clone(); child.material.color?.set(0x168dff); child.material.metalness = .08; child.material.roughness = .22; child.material.transparent = true; child.material.opacity = 1; } }); scene.add(cursor3d); })
+  loadModel(cursorModelUrl).then(model => { cursor3d = normalizeModel(model, .48); cursor3d.position.set(3.1, -1.7, .4); cursor3d.rotation.set(-.2, .2, -.18); cursor3d.traverse(child => { if (child.isMesh) { child.material = child.material.clone(); child.material.color?.set(0x168dff); child.material.metalness = .08; child.material.roughness = .22; child.material.transparent = true; child.material.opacity = 1; } }); cursorScene.add(cursor3d); })
 ]);
 
 const starGeometry = new THREE.BufferGeometry(), starPoints = [], starColors = [], starAlphas = [], color = new THREE.Color();
@@ -129,7 +142,7 @@ const starsNear = new THREE.LineSegments(starGeometry.clone(), trailMaterial());
 
 const pointer = { x: 0, y: 0 };
 addEventListener("pointermove", event => { pointer.x = event.clientX / innerWidth * 2 - 1; pointer.y = -(event.clientY / innerHeight * 2 - 1); });
-function resize() { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); bgPlane.scale.set(innerWidth / Math.max(innerHeight, 1), 1, 1); if (hello?.userData.baseScale) { const scale = hello.userData.baseScale * (innerWidth < 760 ? .54 : 1); hello.scale.setScalar(scale); hello.position.y = innerWidth < 760 ? .05 : .15; } if (cursor3d?.userData.baseScale) { const scale = cursor3d.userData.baseScale * (innerWidth < 760 ? .72 : 1); cursor3d.scale.setScalar(scale); cursor3d.position.x = innerWidth < 760 ? 1.2 : 3.1; } }
+function resize() { renderer.setSize(innerWidth, innerHeight, false); cursorRenderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); bgPlane.scale.set(innerWidth / Math.max(innerHeight, 1), 1, 1); if (hello?.userData.baseScale) { const scale = hello.userData.baseScale * (innerWidth < 760 ? .54 : 1); hello.scale.setScalar(scale); hello.position.y = innerWidth < 760 ? .05 : .15; } if (cursor3d?.userData.baseScale) { const scale = cursor3d.userData.baseScale * (innerWidth < 760 ? .72 : 1); cursor3d.scale.setScalar(scale); cursor3d.position.x = innerWidth < 760 ? 1.2 : 3.1; } }
 addEventListener("resize", resize); resize();
 
 const scroller = document.getElementById("scroller");
@@ -159,7 +172,7 @@ ScrollTrigger.create({ trigger: ".manifesto-wrap", start: "top top", end: "botto
   const p = self.progress;
   scene.background.copy(blackColor); bgMaterial.opacity = 0; const endDots = Math.max(0, Math.min(1, (p - .94) / .06)); setPixelTransition(endDots, "#07144d");
   const density = Math.max(0, Math.min(1, (p - .18) / .54)), visibleLines = Math.round(18 + density * 502), exit = Math.max(0, Math.min(1, (p - .84) / .128)), starOpacity = p < .18 ? 0 : p < .24 ? (p - .18) / .06 : 1 - exit, trailScale = THREE.MathUtils.lerp(1, .035, exit), farScale = (.24 + density * 2.95) * trailScale, nearScale = (.16 + density * 3.72) * trailScale; stars.geometry.setDrawRange(0, visibleLines * 2); starsNear.geometry.setDrawRange(0, Math.round(visibleLines * .58) * 2); stars.material.uniforms.uOpacity.value = starOpacity; starsNear.material.uniforms.uOpacity.value = starOpacity * .38; stars.rotation.z = Math.sin(p * 8.7) * .023 + Math.sin(p * 3.1) * .031; starsNear.rotation.z = stars.rotation.z + .028 + Math.sin(p * 6.2) * .012; stars.scale.set(farScale * (1 + Math.sin(p * 9) * .025), farScale * (.97 + Math.cos(p * 7) * .02), farScale); starsNear.scale.set(nearScale * (.98 + Math.cos(p * 8) * .02), nearScale * (1 + Math.sin(p * 6) * .025), nearScale);
-  if (cursor3d) { const base = cursor3d.userData.baseScale * (innerWidth < 760 ? .72 : 1), frontX = -.2, frontY = .2, frontZ = .04; if (p < .065) { cursor3d.visible = true; setCursorOpacity(1); cursor3d.scale.setScalar(base * 1.18); cursor3d.position.set(0, 1.72, .4); cursor3d.rotation.set(frontX, frontY, frontZ); } else if (p < .16) { const raw = (p - .065) / .095, flip = raw * raw * (3 - 2 * raw); cursor3d.visible = true; setCursorOpacity(1); cursor3d.scale.setScalar(base * THREE.MathUtils.lerp(1.18, 34, flip)); cursor3d.position.set(0, 1.72, .4); cursor3d.rotation.set(frontX, frontY + Math.sin(flip * Math.PI) * .22, frontZ + flip * Math.PI * 2); } else if (p < .22) { const fade = (p - .16) / .06; cursor3d.visible = true; setCursorOpacity(1 - fade); cursor3d.scale.setScalar(base * 34); cursor3d.position.set(0, 1.72, .4); cursor3d.rotation.set(frontX, frontY, frontZ + Math.PI * 2); } else if (p < .84) { cursor3d.visible = false; setCursorOpacity(1); } else { const raw = (p - .84) / .128, shrink = Math.max(0, Math.min(1, raw)), smooth = shrink * shrink * (3 - 2 * shrink); cursor3d.visible = true; setCursorOpacity(1); cursor3d.scale.setScalar(base * THREE.MathUtils.lerp(34, 1, smooth)); cursor3d.position.set(0, 0, .4); cursor3d.rotation.set(frontX, frontY + Math.sin(smooth * Math.PI) * .2, frontZ + smooth * Math.PI * 2); } }
+  if (cursor3d) { const base = cursor3d.userData.baseScale * (innerWidth < 760 ? .72 : 1), frontX = -.2, frontY = .2, frontZ = .04; if (p < .065) { cursor3d.visible = true; setCursorOpacity(1); cursor3d.scale.setScalar(base * 1.18); cursor3d.position.set(0, 1.72, .4); cursor3d.rotation.set(frontX, frontY, frontZ); } else if (p < .16) { const raw = (p - .065) / .095, flip = raw * raw * (3 - 2 * raw); cursor3d.visible = true; setCursorOpacity(1); cursor3d.scale.setScalar(base * THREE.MathUtils.lerp(1.18, 34, flip)); cursor3d.position.set(0, 1.72, .4); cursor3d.rotation.set(frontX, frontY + Math.sin(flip * Math.PI) * .22, frontZ + flip * Math.PI * 2); } else if (p < .22) { const fade = (p - .16) / .06; cursor3d.visible = true; setCursorOpacity(1 - fade); cursor3d.scale.setScalar(base * 34); cursor3d.position.set(0, 1.72, .4); cursor3d.rotation.set(frontX, frontY, frontZ + Math.PI * 2); } else if (p < .84) { cursor3d.visible = false; setCursorOpacity(1); } else { const raw = (p - .84) / .128, shrink = Math.max(0, Math.min(1, raw)), smooth = shrink * shrink * (3 - 2 * shrink); cursor3d.visible = true; setCursorOpacity(1); cursor3d.scale.setScalar(base * THREE.MathUtils.lerp(34, 1, smooth)); cursor3d.position.set(0, 1.72, .4); cursor3d.rotation.set(frontX, frontY + Math.sin(smooth * Math.PI) * .2, frontZ + smooth * Math.PI * 2); } }
   gsap.set(".statement", { color: "#fff" });
   const set = (selector, opacity) => gsap.set(selector, { opacity, scale: .9 + opacity * .1 });
   set(".statement-a", p < .3 ? Math.min(1, p * 8 + .15) * Math.min(1, (.34 - p) * 9) : 0);
@@ -171,7 +184,7 @@ ScrollTrigger.create({ trigger: ".manifesto-wrap", start: "top top", end: "botto
 ScrollTrigger.create({ start: 0, end: "max", onUpdate(self) { const rail = document.querySelector(".scroll-rail i"), ring = document.querySelector(".progress-value"), max = 168; gsap.set(rail, { y: self.progress * max }); ring.style.strokeDashoffset = String(1 - self.progress); document.getElementById("scroll-progress").setAttribute("aria-label", `Back to top, ${Math.round(self.progress * 100)}% viewed`); } });
 document.getElementById("scroll-progress").addEventListener("click", () => lenis.scrollTo(0, { duration: 1.25 }));
 
-function render() { requestAnimationFrame(render); const now = performance.now(), mobile = innerWidth < 760; liquidBump.offset.set(now * .000018 % 1, now * .000011 % 1); Object.values(stickerGroups).flat().forEach(sticker => { if (!sticker.visible) return; const travel = (now * sticker.userData.speed + sticker.userData.phase) % 9.2, size = sticker.userData.baseScale * (mobile ? .72 : 1); sticker.position.x = sticker.userData.x * (mobile ? .43 : 1) + Math.sin(now * .00035 + sticker.userData.phase) * (mobile ? .08 : .18); sticker.position.y = 4.35 - travel; sticker.scale.set(size * sticker.userData.aspect, size, 1); }); if (hello && scenePhase === 0) { hello.rotation.x += (pointer.y * .08 - hello.rotation.x) * .035; hello.rotation.y += (pointer.x * .14 - hello.rotation.y) * .035; } if (cursor3d && !cursorLocked && cursor3d.visible) { cursor3d.position.x += (((mobile ? 1.2 : 3.05) + pointer.x * .25) - cursor3d.position.x) * .04; cursor3d.position.y += (((mobile ? -1.3 : -1.7) + pointer.y * .2) - cursor3d.position.y) * .04; } renderer.render(scene, camera); }
+function render() { requestAnimationFrame(render); const now = performance.now(), mobile = innerWidth < 760; liquidBump.offset.set(now * .000018 % 1, now * .000011 % 1); Object.values(stickerGroups).flat().forEach(sticker => { if (!sticker.visible) return; const travel = (now * sticker.userData.speed + sticker.userData.phase) % 9.2, size = sticker.userData.baseScale * (mobile ? .72 : 1); sticker.position.x = sticker.userData.x * (mobile ? .43 : 1) + Math.sin(now * .00035 + sticker.userData.phase) * (mobile ? .08 : .18); sticker.position.y = 4.35 - travel; sticker.scale.set(size * sticker.userData.aspect, size, 1); }); if (hello && scenePhase === 0) { hello.rotation.x += (pointer.y * .08 - hello.rotation.x) * .035; hello.rotation.y += (pointer.x * .14 - hello.rotation.y) * .035; } if (cursor3d && !cursorLocked && cursor3d.visible) { cursor3d.position.x += (((mobile ? 1.2 : 3.05) + pointer.x * .25) - cursor3d.position.x) * .04; cursor3d.position.y += (((mobile ? -1.3 : -1.7) + pointer.y * .2) - cursor3d.position.y) * .04; } renderer.render(scene, camera); cursorRenderer.render(cursorScene, camera); }
 render();
 
 const themeButton = document.getElementById("theme-button"), mobileTheme = document.getElementById("mobile-theme"); let themeIndex = 0;
