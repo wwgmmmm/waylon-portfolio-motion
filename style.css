@@ -41,3 +41,21 @@ body.theme-paper{--label:#000;--label2:rgba(0,0,0,.43)}body.theme-dark{--label:#
 .manifesto-wrap,.statement,.value,.contact,.contact-links,.project-meta{color:#fff}
 .modal-head{background:rgba(8,28,41,.94);color:#fff}.project-modal{color:#fff}
 @media(max-width:760px){.scroll-progress{right:8px;bottom:7px;width:46px;height:46px}.sticker-shell{width:58px}.sticker-c{width:86px}}
+
+/* Reference-led refinement: water type, falling stickers and archive pairing. */
+.scroll-progress{right:var(--pad-x);bottom:24px;width:20px;height:20px;padding:0}
+.scroll-progress circle{stroke-width:3.4}
+.progress-track{stroke:rgba(255,255,255,.28)}
+.progress-arrow{display:none}
+.sticker-shell{top:-24vh;bottom:auto;opacity:0;transform:none}
+.sticker-a{left:6%;right:auto}.sticker-b{left:72%;right:auto}.sticker-c{left:35%;right:auto}.sticker-d{left:82%;right:auto}.sticker-e{left:9%;right:auto}.sticker-f{left:59%;right:auto}
+.sticker-shell .sticker{animation-name:sticker-fall;animation-timing-function:linear;animation-iteration-count:infinite;animation-direction:normal;animation-duration:16s}
+.sticker-a .sticker{animation-delay:-2s;animation-duration:17s}.sticker-b .sticker{animation-delay:-10s;animation-duration:20s}.sticker-c .sticker{animation-delay:-6s;animation-duration:18s}.sticker-d .sticker{animation-delay:-4s;animation-duration:19s}.sticker-e .sticker{animation-delay:-12s;animation-duration:21s}.sticker-f .sticker{animation-delay:-8s;animation-duration:17.5s}
+@keyframes sticker-fall{0%{transform:translate3d(-10px,0,0) rotate(-8deg)}25%{transform:translate3d(12px,34vh,0) rotate(5deg)}50%{transform:translate3d(-7px,68vh,0) rotate(-3deg)}75%{transform:translate3d(14px,102vh,0) rotate(7deg)}100%{transform:translate3d(-4px,136vh,0) rotate(-5deg)}}
+.work-grid{row-gap:14vh}
+.project:nth-child(1),.project:nth-child(3),.project:nth-child(5),.project:nth-child(7),.project:nth-child(9){grid-column:1/span 9}
+.project:nth-child(2),.project:nth-child(4),.project:nth-child(6),.project:nth-child(8),.project:nth-child(10){grid-column:4/span 9}
+.project:nth-child(11),.project:nth-child(13){grid-column:1/span 6}
+.project:nth-child(12),.project:nth-child(14){grid-column:7/span 6}
+.project-modal{background:#000;color:#fff}.modal-head{background:rgba(0,0,0,.94);border-color:rgba(255,255,255,.2)}
+@media(max-width:760px){.scroll-progress{right:16px;bottom:18px;width:18px;height:18px}.work-grid{row-gap:8vh}.project:nth-child(-n+10){grid-column:1/span 12}.project:nth-child(n+11):nth-child(odd){grid-column:1/span 6}.project:nth-child(n+11):nth-child(even){grid-column:7/span 6}.project:nth-child(n+11) .project-meta{font-size:9px}.sticker-shell{width:52px}.sticker-c{width:72px}}
