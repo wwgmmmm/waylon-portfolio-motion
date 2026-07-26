@@ -14415,18 +14415,37 @@
   var audio = document.getElementById("bgm");
   var soundButton = document.getElementById("sound-button");
   var mobileSound = document.getElementById("mobile-sound");
-  async function toggleSound() {
-    if (audio.paused) {
-      await audio.play();
-      soundButton.textContent = "SOUND[\\]";
-      soundButton.setAttribute("aria-pressed", "true");
-    } else {
-      audio.pause();
-      soundButton.textContent = "SOUND[ ]";
-      soundButton.setAttribute("aria-pressed", "false");
-    }
+  var soundEnabled = true;
+  audio.volume = 0.46;
+  function updateSoundButton() {
+    soundButton.textContent = soundEnabled ? "SOUND[\\]" : "SOUND[ ]";
+    soundButton.setAttribute("aria-pressed", String(soundEnabled));
     if (mobileSound) mobileSound.textContent = soundButton.textContent;
   }
+  async function startSound() {
+    if (!soundEnabled || !audio.paused) return;
+    try {
+      await audio.play();
+    } catch {
+    }
+  }
+  function toggleSound() {
+    soundEnabled = !soundEnabled;
+    if (soundEnabled) startSound();
+    else audio.pause();
+    updateSoundButton();
+  }
+  async function unlockSound() {
+    await startSound();
+    if (!audio.paused) {
+      removeEventListener("pointerdown", unlockSound, true);
+      removeEventListener("keydown", unlockSound, true);
+    }
+  }
+  updateSoundButton();
+  startSound();
+  addEventListener("pointerdown", unlockSound, true);
+  addEventListener("keydown", unlockSound, true);
   soundButton.onclick = toggleSound;
   if (mobileSound) mobileSound.onclick = toggleSound;
   var menuButton = document.querySelector(".menu-button");

@@ -221,7 +221,12 @@ const themeButton = document.getElementById("theme-button"), mobileTheme = docum
 function cycleTheme() { themeIndex = (themeIndex + 1) % 3; document.body.classList.toggle("theme-paper", themeIndex === 1); document.body.classList.toggle("theme-dark", themeIndex === 2); const color = themeIndex === 0 ? 0x07144d : themeIndex === 1 ? 0xf2f0ea : 0x000000; if (scenePhase !== 1) scene.background.set(color); themeButton.textContent = `THEME[${["A","B","C"][themeIndex]}]`; if (mobileTheme) mobileTheme.textContent = themeButton.textContent; }
 themeButton.onclick = cycleTheme; if (mobileTheme) mobileTheme.onclick = cycleTheme;
 const audio = document.getElementById("bgm"), soundButton = document.getElementById("sound-button"), mobileSound = document.getElementById("mobile-sound");
-async function toggleSound() { if (audio.paused) { await audio.play(); soundButton.textContent = "SOUND[\\]"; soundButton.setAttribute("aria-pressed", "true"); } else { audio.pause(); soundButton.textContent = "SOUND[ ]"; soundButton.setAttribute("aria-pressed", "false"); } if (mobileSound) mobileSound.textContent = soundButton.textContent; }
+let soundEnabled = true; audio.volume = .46;
+function updateSoundButton() { soundButton.textContent = soundEnabled ? "SOUND[\\]" : "SOUND[ ]"; soundButton.setAttribute("aria-pressed", String(soundEnabled)); if (mobileSound) mobileSound.textContent = soundButton.textContent; }
+async function startSound() { if (!soundEnabled || !audio.paused) return; try { await audio.play(); } catch {} }
+function toggleSound() { soundEnabled = !soundEnabled; if (soundEnabled) startSound(); else audio.pause(); updateSoundButton(); }
+async function unlockSound() { await startSound(); if (!audio.paused) { removeEventListener("pointerdown", unlockSound, true); removeEventListener("keydown", unlockSound, true); } }
+updateSoundButton(); startSound(); addEventListener("pointerdown", unlockSound, true); addEventListener("keydown", unlockSound, true);
 soundButton.onclick = toggleSound; if (mobileSound) mobileSound.onclick = toggleSound;
 const menuButton = document.querySelector(".menu-button"), mobileMenu = document.querySelector(".mobile-menu"); menuButton.onclick = () => { const open = mobileMenu.classList.toggle("open"); mobileMenu.setAttribute("aria-hidden", String(!open)); };
 document.querySelectorAll("[data-scroll]").forEach(button => button.addEventListener("click", () => { lenis.scrollTo(`#${button.dataset.scroll}`); mobileMenu.classList.remove("open"); }));
