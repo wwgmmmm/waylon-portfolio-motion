@@ -14225,9 +14225,21 @@
     bgMaterial.opacity = 0;
   } });
   function titleCursorY() {
-    const rect = manifestoTitle.getBoundingClientRect(), screenY = rect.top - (innerWidth < 760 ? 52 : 72), distance = camera.position.z - 0.4, worldHeight = 2 * Math.tan(Ss.degToRad(camera.fov * 0.5)) * distance;
+    const rect = manifestoTitle.getBoundingClientRect(), screenY = rect.top - (innerWidth < 760 ? 74 : 98), distance = camera.position.z - 0.4, worldHeight = 2 * Math.tan(Ss.degToRad(camera.fov * 0.5)) * distance;
     return (0.5 - screenY / innerHeight) * worldHeight;
   }
+  function setManifestoIntroCursor() {
+    if (!manifestoCursor) return;
+    const base = manifestoCursor.userData.baseScale * (innerWidth < 760 ? 0.72 : 1);
+    manifestoCursor.visible = true;
+    setCursorOpacity(manifestoCursor, 1);
+    manifestoCursor.scale.setScalar(base * 1.18);
+    manifestoCursor.position.set(0, titleCursorY(), 0.4);
+    manifestoCursor.rotation.set(-0.2, 0.2, 0.04);
+  }
+  ScrollTrigger.create({ trigger: ".manifesto-wrap", start: "top bottom", end: "top top", onEnter: setManifestoIntroCursor, onEnterBack: setManifestoIntroCursor, onUpdate: setManifestoIntroCursor, onLeaveBack() {
+    if (manifestoCursor) manifestoCursor.visible = false;
+  } });
   ScrollTrigger.create({ trigger: ".manifesto-wrap", start: "top top", end: () => ScrollTrigger.maxScroll(scroller), invalidateOnRefresh: true, onEnter: () => {
     scenePhase = 1;
     if (cursor3d) cursor3d.visible = false;
@@ -14247,10 +14259,10 @@
     setStickerOpacity("end", 0);
     stars.material.uniforms.uOpacity.value = 0;
     starsNear.material.uniforms.uOpacity.value = 0;
-    if (manifestoCursor) manifestoCursor.visible = false;
+    setManifestoIntroCursor();
   }, onUpdate(self2) {
     const p2 = self2.progress;
-    pixelTransition.classList.remove("protect-content");
+    pixelTransition.classList.toggle("protect-content", p2 >= 0.9);
     scene.background.copy(blackColor);
     bgMaterial.opacity = 0;
     const endDots = Math.max(0, Math.min(1, (p2 - 0.91) / 0.09));
