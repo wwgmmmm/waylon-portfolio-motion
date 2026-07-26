@@ -107,3 +107,14 @@ body{background:#000;color:#fff}
 .mobile-grid{display:none}
 @media(max-width:760px){.desktop-grid{display:none}.mobile-grid{display:block}}
 .manifesto-lead .statement{transform:translateY(9vh)}
+
+/* Fast first-paint fallback while the interactive glass model initializes. */
+.hello-fallback{position:absolute;z-index:2;left:50%;top:31%;transform:translateX(-50%) rotate(-5deg);opacity:0;pointer-events:none;font:400 clamp(170px,24vw,360px)/.8 Allura,cursive;color:rgba(25,65,158,.92);text-shadow:-2px -2px 0 rgba(193,230,255,.75),3px 5px 8px rgba(0,12,65,.48);animation:hello-fallback-in .01s .85s forwards}
+body.hello-ready .hello-fallback{animation:none;opacity:0}
+@keyframes hello-fallback-in{to{opacity:1}}
+
+@media(max-width:760px){
+  :root{--sans:-apple-system,BlinkMacSystemFont,"Helvetica Neue",Arial,sans-serif;--mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace}
+  .hud,.project-tag,.project-meta,.contact-links,.wechat-contact{font-family:var(--mono)}
+  .hello-fallback{top:35%;font-size:48vw;white-space:nowrap}
+}

@@ -1,13 +1,14 @@
 import * as THREE from "./assets/vendor/three.module.min.js";
 import { GLTFLoader } from "./assets/vendor/GLTFLoader.js";
-import helloModelUrl from "./assets/reference/model/hello.gltf";
-import cursorModelUrl from "./assets/reference/model/cursor.glb";
-import sticker01Url from "./assets/reference/stickers/s_01.png";
-import sticker05Url from "./assets/reference/stickers/s_05.png";
-import sticker08Url from "./assets/reference/stickers/s_08.png";
-import sticker09Url from "./assets/reference/stickers/s_09.png";
-import sticker10Url from "./assets/reference/stickers/s_10.png";
-import sticker11Url from "./assets/reference/stickers/s_11.png";
+const helloModelUrl = "./assets/reference/model/hello.glb";
+const cursorModelUrl = "./assets/reference/model/cursor.glb";
+const sticker01Url = "./assets/reference/stickers/s_01.webp";
+const sticker05Url = "./assets/reference/stickers/s_05.webp";
+const sticker08Url = "./assets/reference/stickers/s_08.webp";
+const sticker09Url = "./assets/reference/stickers/s_09.webp";
+const sticker10Url = "./assets/reference/stickers/s_10.webp";
+const sticker11Url = "./assets/reference/stickers/s_11.webp";
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
 const projects = [
   {title:"VOLVO EM90",year:"RECENT",type:"MEDIA EXPERIENCE",cover:"assets/portfolio/works/01-volvo-em90/cover.webp"},
@@ -32,7 +33,7 @@ projects.forEach((project, index) => {
   article.className = "project";
   article.tabIndex = 0;
   const mobileCover = project.cover.replace(/\.webp$/, "-960.webp");
-  article.innerHTML = `<div class="project-image"><span class="project-tag">${project.type}</span><img src="${project.cover}" srcset="${mobileCover} 960w, ${project.cover} 1800w" sizes="(max-width:760px) 100vw, 84vw" alt="${project.title}" loading="lazy" decoding="async"></div><div class="project-meta"><span>${project.title}</span><span>${project.year}</span></div>`;
+  article.innerHTML = `<div class="project-image"><span class="project-tag">${project.type}</span><img data-src="${project.cover}" data-srcset="${mobileCover} 960w, ${project.cover} 1800w" sizes="(max-width:760px) 50vw, 84vw" alt="${project.title}" decoding="async" fetchpriority="low"></div><div class="project-meta"><span>${project.title}</span><span>${project.year}</span></div>`;
   article.addEventListener("click", () => openProject(project));
   article.addEventListener("keydown", event => { if (event.key === "Enter") openProject(project); });
   workGrid.appendChild(article);
@@ -64,7 +65,7 @@ rebuildGrid();
 
 const canvas = document.getElementById("scene");
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false, powerPreference: "high-performance" });
-renderer.setPixelRatio(Math.min(devicePixelRatio, innerWidth < 760 ? 1.25 : 1.5)); renderer.outputColorSpace = THREE.SRGBColorSpace;
+renderer.setPixelRatio(Math.min(devicePixelRatio, isIOS ? 1 : innerWidth < 760 ? 1.25 : 1.5)); renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.08;
 const cursorRenderer = new THREE.WebGLRenderer({ canvas: document.getElementById("cursor-scene"), antialias: true, alpha: true, powerPreference: "high-performance" });
 cursorRenderer.setPixelRatio(Math.min(devicePixelRatio, 1.15)); cursorRenderer.outputColorSpace = THREE.SRGBColorSpace; cursorRenderer.toneMapping = THREE.ACESFilmicToneMapping; cursorRenderer.toneMappingExposure = 1.08; cursorRenderer.setClearColor(0x000000, 0);
@@ -88,20 +89,15 @@ function createStudioEnvironment() {
 }
 scene.environment = createStudioEnvironment();
 
-function brushTexture() {
-  const c = document.createElement("canvas"); c.width = c.height = 1024; const x = c.getContext("2d");
-  x.fillStyle = "#07144d"; x.fillRect(0, 0, 1024, 1024); x.save(); x.translate(520, 520); x.rotate(-.72); x.filter = "blur(22px)";
-  [0, 110, 230, 355].forEach((offset, i) => { const g = x.createLinearGradient(-700, offset, 700, offset); g.addColorStop(0, "rgba(30,48,170,0)"); g.addColorStop(.23, "rgba(30,48,170,.42)"); g.addColorStop(.62, "rgba(62,98,220,.25)"); g.addColorStop(1, "rgba(30,48,170,0)"); x.strokeStyle = g; x.lineWidth = 110 - i * 8; x.lineCap = "round"; x.beginPath(); x.moveTo(-650, offset); x.bezierCurveTo(-180, offset - 80, 220, offset + 65, 700, offset - 20); x.stroke(); }); x.restore();
-  const texture = new THREE.CanvasTexture(c); texture.colorSpace = THREE.SRGBColorSpace; return texture;
-}
-const bgMaterial = new THREE.MeshBasicMaterial({ map: brushTexture(), transparent: true });
+const bgMaterial = new THREE.MeshBasicMaterial({ color: 0x07144d, transparent: true });
+new THREE.TextureLoader().load("./assets/reference/brush-bg.jpg", texture => { texture.colorSpace = THREE.SRGBColorSpace; bgMaterial.map = texture; bgMaterial.color.set(0xffffff); bgMaterial.needsUpdate = true; });
 const bgPlane = new THREE.Mesh(new THREE.PlaneGeometry(18, 12), bgMaterial); bgPlane.position.z = -4; scene.add(bgPlane);
 
 const stickerGroups = { hero: [], end: [] }, stickerLoader = new THREE.TextureLoader();
 function createSticker(group, src, x, scale, phase, speed) {
   if (group === "end") {
     const sticker = document.createElement("img");
-    sticker.className = "end-sticker"; sticker.src = src; sticker.alt = ""; sticker.decoding = "async";
+    sticker.className = "end-sticker"; sticker.dataset.src = src; sticker.alt = ""; sticker.decoding = "async";
     sticker.style.setProperty("--sticker-x", `${50 + x * 12}%`);
     sticker.style.setProperty("--sticker-size", `${Math.round(scale * 112)}px`);
     sticker.style.setProperty("--sticker-duration", `${Math.round(17 + phase * .55)}s`);
@@ -119,7 +115,7 @@ createSticker("end", sticker01Url, -2.9, .72, 1.3, .00012);
 createSticker("end", sticker09Url, .85, .66, 4.7, .00014);
 createSticker("end", sticker11Url, 2.8, .9, 7.1, .000105);
 function setStickerOpacity(group, opacity) {
-  if (group === "end") { document.querySelector(".end-sticker-layer").classList.toggle("is-visible", opacity > .06); return; }
+  if (group === "end") { const visible = opacity > .06; document.querySelector(".end-sticker-layer").classList.toggle("is-visible", visible); if (visible) stickerGroups.end.forEach(sticker => { if (!sticker.src) sticker.src = sticker.dataset.src; }); return; }
   stickerGroups[group].forEach(sticker => { sticker.visible = opacity > .06; });
 }
 
@@ -147,14 +143,16 @@ const liquidNormal = createLiquidNormalTexture();
 function applyWaterMaterial(object) {
   object.traverse(child => {
     if (!child.isMesh) return;
-    child.material = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: false, opacity: 1, transmission: 1, thickness: 1.72, ior: 1.56, roughness: .018, metalness: 0, clearcoat: .025, clearcoatRoughness: .09, specularIntensity: .62, attenuationColor: new THREE.Color(0xeaf3ff), attenuationDistance: 58, dispersion: .88, envMapIntensity: 1.28, bumpMap: liquidBump, bumpScale: .41, normalMap: liquidNormal, normalScale: new THREE.Vector2(.98, .76), depthWrite: true, side: THREE.FrontSide });
+    child.material = isIOS
+      ? new THREE.MeshPhysicalMaterial({ color: 0x2d6bc5, transparent: true, opacity: .76, transmission: 0, roughness: .065, metalness: .06, clearcoat: .38, clearcoatRoughness: .09, specularIntensity: .58, envMapIntensity: 1.25, normalMap: liquidNormal, normalScale: new THREE.Vector2(.58, .44), depthWrite: true, side: THREE.FrontSide })
+      : new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: false, opacity: 1, transmission: 1, thickness: 1.72, ior: 1.56, roughness: .018, metalness: 0, clearcoat: .025, clearcoatRoughness: .09, specularIntensity: .62, attenuationColor: new THREE.Color(0xeaf3ff), attenuationDistance: 58, dispersion: .88, envMapIntensity: 1.28, bumpMap: liquidBump, bumpScale: .41, normalMap: liquidNormal, normalScale: new THREE.Vector2(.98, .76), depthWrite: true, side: THREE.FrontSide });
   });
 }
 function setCursorOpacity(cursor, opacity) { if (!cursor) return; cursor.traverse(child => { if (child.isMesh) child.material.opacity = opacity; }); }
 function styleCursor(cursor) { cursor.traverse(child => { if (child.isMesh) { child.material = child.material.clone(); child.material.color?.set(0x168dff); child.material.metalness = .08; child.material.roughness = .22; child.material.transparent = true; child.material.opacity = 1; child.material.depthWrite = false; } }); }
 let hello, cursor3d, manifestoCursor;
 const modelsReady = Promise.all([
-  loadModel(helloModelUrl).then(model => { hello = normalizeModel(model, 5.1); applyWaterMaterial(hello); hello.position.set(.15, .15, 0); hello.rotation.set(-.08, -.12, -.03); scene.add(hello); }),
+  loadModel(helloModelUrl).then(model => { hello = normalizeModel(model, 5.1); applyWaterMaterial(hello); hello.position.set(.15, .15, 0); hello.rotation.set(-.08, -.12, -.03); scene.add(hello); document.body.classList.add("hello-ready"); }),
   loadModel(cursorModelUrl).then(model => { cursor3d = normalizeModel(model, .48); styleCursor(cursor3d); cursor3d.position.set(3.1, -1.7, .4); cursor3d.rotation.set(-.2, .2, -.18); manifestoCursor = cursor3d.clone(true); styleCursor(manifestoCursor); manifestoCursor.visible = false; cursorScene.add(cursor3d, manifestoCursor); })
 ]);
 
@@ -168,10 +166,12 @@ const starsNear = new THREE.LineSegments(starGeometry.clone(), trailMaterial());
 
 const pointer = { x: 0, y: 0 };
 addEventListener("pointermove", event => { pointer.x = event.clientX / innerWidth * 2 - 1; pointer.y = -(event.clientY / innerHeight * 2 - 1); });
-function resize() { renderer.setPixelRatio(Math.min(devicePixelRatio, innerWidth < 760 ? 1.25 : 1.5)); renderer.setSize(innerWidth, innerHeight, false); cursorRenderer.setPixelRatio(Math.min(devicePixelRatio, 1.15)); cursorRenderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); bgPlane.scale.set(innerWidth / Math.max(innerHeight, 1), 1, 1); rebuildGrid(); if (hello?.userData.baseScale) { const scale = hello.userData.baseScale * (innerWidth < 760 ? .4 : 1); hello.scale.setScalar(scale); hello.position.x = innerWidth < 760 ? -.05 : .15; hello.position.y = innerWidth < 760 ? .05 : .15; } if (cursor3d?.userData.baseScale) { const scale = cursor3d.userData.baseScale * (innerWidth < 760 ? .72 : 1); cursor3d.scale.setScalar(scale); cursor3d.position.x = innerWidth < 760 ? .25 : 3.1; } }
+function resize() { renderer.setPixelRatio(Math.min(devicePixelRatio, isIOS ? 1 : innerWidth < 760 ? 1.25 : 1.5)); renderer.setSize(innerWidth, innerHeight, false); cursorRenderer.setPixelRatio(Math.min(devicePixelRatio, isIOS ? 1 : 1.15)); cursorRenderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); bgPlane.scale.set(innerWidth / Math.max(innerHeight, 1), 1, 1); rebuildGrid(); if (hello?.userData.baseScale) { const scale = hello.userData.baseScale * (innerWidth < 760 ? .42 : 1); hello.scale.setScalar(scale); hello.position.x = innerWidth < 760 ? -.03 : .15; hello.position.y = innerWidth < 760 ? .05 : .15; } if (cursor3d?.userData.baseScale) { const scale = cursor3d.userData.baseScale * (innerWidth < 760 ? .72 : 1); cursor3d.scale.setScalar(scale); cursor3d.position.x = innerWidth < 760 ? .45 : 3.1; } }
 addEventListener("resize", resize); resize();
 
 const scroller = document.getElementById("scroller");
+function loadProjectImage(image) { if (image.src) return; image.srcset = image.dataset.srcset; image.src = image.dataset.src; image.removeAttribute("data-src"); image.removeAttribute("data-srcset"); }
+if ("IntersectionObserver" in window) { const imageObserver = new IntersectionObserver(entries => entries.forEach(entry => { if (!entry.isIntersecting) return; loadProjectImage(entry.target); imageObserver.unobserve(entry.target); }), { root: scroller, rootMargin: "600px 0px" }); document.querySelectorAll(".project-image img").forEach(image => imageObserver.observe(image)); } else document.querySelectorAll(".project-image img").forEach(loadProjectImage);
 const manifestoWrap = document.querySelector(".manifesto-wrap"), manifestoTitle = document.querySelector(".statement-a");
 const lenis = new Lenis({ wrapper: scroller, content: scroller.firstElementChild, duration: 1.15, smoothWheel: true });
 lenis.on("scroll", ScrollTrigger.update); gsap.ticker.add(time => lenis.raf(time * 1000)); gsap.ticker.lagSmoothing(0);
@@ -182,8 +182,10 @@ function setPixelTransition(progress, color) { const p = Math.max(0, Math.min(1,
 
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 if (!reducedMotion) {
-  gsap.from(".hero-info > *", { y: 20, autoAlpha: 0, stagger: .1, duration: .9, ease: "power3.out", delay: .2 });
-  gsap.from(".hero h1 span", { yPercent: 110, autoAlpha: 0, stagger: .08, duration: 1, ease: "power3.out", delay: .45 });
+  if (innerWidth >= 760) {
+    gsap.from(".hero-info > *", { y: 20, autoAlpha: 0, stagger: .1, duration: .9, ease: "power3.out", delay: .2 });
+    gsap.from(".hero h1 span", { yPercent: 110, autoAlpha: 0, stagger: .08, duration: 1, ease: "power3.out", delay: .45 });
+  }
   gsap.from(".signature-word", { autoAlpha: 0, scale: .78, rotation: -12, duration: 1.15, ease: "power3.out", scrollTrigger: { trigger: ".about", start: "top 78%" } });
   gsap.from(".about-copy p", { y: 55, autoAlpha: 0, stagger: .15, duration: .9, scrollTrigger: { trigger: ".about-copy", start: "top 82%" } });
   ScrollTrigger.batch(".project", { start: "top 88%", once: true, onEnter: batch => gsap.from(batch, { y: 55, autoAlpha: 0, stagger: .08, duration: .75, ease: "power3.out" }) });
@@ -214,7 +216,7 @@ ScrollTrigger.create({ trigger: ".manifesto-wrap", start: "top top", end: () => 
 ScrollTrigger.create({ start: 0, end: "max", onUpdate(self) { const rail = document.querySelector(".scroll-rail i"), ring = document.querySelector(".progress-value"), max = 168; gsap.set(rail, { y: self.progress * max }); ring.style.strokeDashoffset = String(1 - self.progress); document.getElementById("scroll-progress").setAttribute("aria-label", `Back to top, ${Math.round(self.progress * 100)}% viewed`); } });
 document.getElementById("scroll-progress").addEventListener("click", () => lenis.scrollTo(0, { duration: 1.25 }));
 
-function render() { requestAnimationFrame(render); const now = performance.now(), mobile = innerWidth < 760; liquidBump.offset.set(now * .000034 % 1, now * .000021 % 1); liquidNormal.offset.set(now * -.000019 % 1, now * .000027 % 1); liquidNormal.repeat.set(2.15 + Math.sin(now * .00042) * .12, 1.55 + Math.cos(now * .00037) * .1); stickerGroups.hero.forEach(sticker => { if (!sticker.visible) return; const travel = (now * sticker.userData.speed + sticker.userData.phase) % 9.2, size = sticker.userData.baseScale * (mobile ? .72 : 1); sticker.position.x = sticker.userData.x * (mobile ? .43 : 1) + Math.sin(now * .00035 + sticker.userData.phase) * (mobile ? .08 : .18); sticker.position.y = 4.35 - travel; sticker.scale.set(size * sticker.userData.aspect, size, 1); }); if (hello && scenePhase === 0) { hello.rotation.x += (pointer.y * .08 - hello.rotation.x) * .035; hello.rotation.y += (pointer.x * .14 - hello.rotation.y) * .035; } if (cursor3d?.visible) { cursor3d.position.x += (((mobile ? .25 : 3.05) + pointer.x * .16) - cursor3d.position.x) * .04; cursor3d.position.y += (((mobile ? -1.3 : -1.7) + pointer.y * .2) - cursor3d.position.y) * .04; } renderer.render(scene, camera); if (cursor3d?.visible || manifestoCursor?.visible) cursorRenderer.render(cursorScene, camera); else cursorRenderer.clear(); }
+function render() { requestAnimationFrame(render); const now = performance.now(), mobile = innerWidth < 760; liquidBump.offset.set(now * .000034 % 1, now * .000021 % 1); liquidNormal.offset.set(now * -.000019 % 1, now * .000027 % 1); liquidNormal.repeat.set(2.15 + Math.sin(now * .00042) * .12, 1.55 + Math.cos(now * .00037) * .1); stickerGroups.hero.forEach(sticker => { if (!sticker.visible) return; const travel = (now * sticker.userData.speed + sticker.userData.phase) % 9.2, size = sticker.userData.baseScale * (mobile ? .72 : 1); sticker.position.x = sticker.userData.x * (mobile ? .43 : 1) + Math.sin(now * .00035 + sticker.userData.phase) * (mobile ? .08 : .18); sticker.position.y = 4.35 - travel; sticker.scale.set(size * sticker.userData.aspect, size, 1); }); if (hello && scenePhase === 0) { hello.rotation.x += (pointer.y * .08 - hello.rotation.x) * .035; hello.rotation.y += (pointer.x * .14 - hello.rotation.y) * .035; } if (cursor3d?.visible) { cursor3d.position.x += (((mobile ? .45 : 3.05) + pointer.x * .16) - cursor3d.position.x) * .04; cursor3d.position.y += (((mobile ? -1.3 : -1.7) + pointer.y * .2) - cursor3d.position.y) * .04; } renderer.render(scene, camera); if (cursor3d?.visible || manifestoCursor?.visible) cursorRenderer.render(cursorScene, camera); else cursorRenderer.clear(); }
 render();
 
 const themeButton = document.getElementById("theme-button"), mobileTheme = document.getElementById("mobile-theme"); let themeIndex = 0;
@@ -226,7 +228,7 @@ function updateSoundButton() { soundButton.textContent = soundEnabled ? "SOUND[\
 async function startSound() { if (!soundEnabled || !audio.paused) return; try { await audio.play(); } catch {} }
 function toggleSound() { soundEnabled = !soundEnabled; if (soundEnabled) startSound(); else audio.pause(); updateSoundButton(); }
 async function unlockSound() { await startSound(); if (!audio.paused) { removeEventListener("pointerdown", unlockSound, true); removeEventListener("keydown", unlockSound, true); } }
-updateSoundButton(); startSound(); addEventListener("pointerdown", unlockSound, true); addEventListener("keydown", unlockSound, true);
+updateSoundButton(); if (!isIOS) startSound(); addEventListener("pointerdown", unlockSound, true); addEventListener("keydown", unlockSound, true);
 soundButton.onclick = toggleSound; if (mobileSound) mobileSound.onclick = toggleSound;
 const menuButton = document.querySelector(".menu-button"), mobileMenu = document.querySelector(".mobile-menu"); menuButton.onclick = () => { const open = mobileMenu.classList.toggle("open"); mobileMenu.setAttribute("aria-hidden", String(!open)); };
 document.querySelectorAll("[data-scroll]").forEach(button => button.addEventListener("click", () => { lenis.scrollTo(`#${button.dataset.scroll}`); mobileMenu.classList.remove("open"); }));
@@ -234,4 +236,4 @@ function updateClock() { const time = new Date().toLocaleTimeString("en-GB", { h
 
 function dismissLoader() { const loadingScreen = document.getElementById("loader"); if (!loadingScreen) return; gsap.to(loadingScreen, { autoAlpha: 0, duration: .45, onComplete() { loadingScreen.remove(); ScrollTrigger.refresh(); } }); }
 modelsReady.then(() => { resize(); ScrollTrigger.refresh(); }).catch(console.error);
-Promise.race([modelsReady, new Promise(resolve => setTimeout(resolve, 4200))]).finally(dismissLoader);
+Promise.race([modelsReady, new Promise(resolve => setTimeout(resolve, 900))]).finally(dismissLoader);

@@ -6,6 +6,10 @@
   <meta name="description" content="Waylon is a Beijing-based visual designer focused on automotive launches, exhibitions and brand experiences.">
   <meta name="theme-color" content="#081c29">
   <title>WAYLON / 2026</title>
+  <link rel="preload" href="assets/reference/brush-bg.jpg" as="image">
+  <link rel="preload" href="assets/reference/model/hello.glb" as="fetch" crossorigin>
+  <link rel="modulepreload" href="assets/vendor/three.module.min.js">
+  <link rel="modulepreload" href="assets/vendor/GLTFLoader.js">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -44,6 +48,7 @@
   <div id="scroller">
     <main>
       <section class="hero panel" id="top">
+        <div class="hello-fallback" aria-hidden="true">hello</div>
         <div class="hero-info">
           <h2>Visual &amp;<br>Experience</h2>
           <p>Thinking in images.<br>Designing with impact.</p>
@@ -77,16 +82,16 @@
       <footer class="contact panel" id="contact">
         <div class="contact-words"><span>Let's</span><span>Create</span><span>Something</span><span>Extraordinary</span></div>
         <div class="contact-links"><a href="mailto:wwgmmmm@gmail.com">WWGMMMM@GMAIL.COM</a><div><span>BEIJING</span><span>WAYLON / <b id="year"></b></span></div></div>
-        <div class="wechat-contact"><span>WECHAT</span><img src="assets/contact/wechat-qr.png" alt="Waylon WeChat QR code"></div>
+        <div class="wechat-contact"><span>WECHAT</span><img src="assets/contact/wechat-qr.png" alt="Waylon WeChat QR code" loading="lazy" decoding="async" fetchpriority="low"></div>
       </footer>
     </main>
   </div>
 
   <div class="project-modal" id="project-modal" hidden><div class="modal-head"><h2 id="modal-title"></h2><button type="button" id="modal-close">×</button></div><div class="modal-intro"><p id="modal-description"></p><p id="modal-meta"></p></div><div id="modal-gallery"></div></div>
-  <audio id="bgm" src="assets/reference/bgm.mp3" loop preload="auto" autoplay></audio>
+  <audio id="bgm" src="assets/reference/bgm.mp3" loop preload="none"></audio>
   <script src="assets/vendor/lenis.min.js"></script>
   <script src="assets/vendor/gsap.min.js"></script>
   <script src="assets/vendor/ScrollTrigger.min.js"></script>
-  <script src="app.bundle.js"></script>
+  <script type="module" src="app.js?v=20260726c"></script>
 </body>
 </html>
