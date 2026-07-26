@@ -2,7 +2,6 @@ import * as THREE from "./assets/vendor/three.module.min.js";
 import { GLTFLoader } from "./assets/vendor/GLTFLoader.js";
 import helloModelUrl from "./assets/reference/model/hello.gltf";
 import cursorModelUrl from "./assets/reference/model/cursor.glb";
-import contactModelUrl from "./assets/reference/model/cnt.gltf";
 import sticker01Url from "./assets/reference/stickers/s_01.png";
 import sticker05Url from "./assets/reference/stickers/s_05.png";
 import sticker08Url from "./assets/reference/stickers/s_08.png";
@@ -62,6 +61,19 @@ scene.add(new THREE.HemisphereLight(0xffffff, 0x699bd0, 3.2));
 const keyLight = new THREE.DirectionalLight(0xffffff, 4); keyLight.position.set(-3, 5, 6); scene.add(keyLight);
 const rimLight = new THREE.DirectionalLight(0x449cff, 5); rimLight.position.set(4, -2, 3); scene.add(rimLight);
 
+function createStudioEnvironment() {
+  const environment = new THREE.Scene(); environment.background = new THREE.Color(0x061044);
+  const panels = [
+    { color: 0xffffff, scale: [5, 2, 1], position: [-4, 3, 1], rotation: [0, .72, 0] },
+    { color: 0x7da4ff, scale: [4, 1.4, 1], position: [4, 1, 2], rotation: [0, -.82, 0] },
+    { color: 0x274bff, scale: [7, 2, 1], position: [0, -4, 0], rotation: [-1.25, 0, 0] },
+    { color: 0xffffff, scale: [2, 6, 1], position: [0, 2, -4], rotation: [0, 0, 0] }
+  ];
+  panels.forEach(({ color, scale, position, rotation }) => { const panel = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide })); panel.scale.set(...scale); panel.position.set(...position); panel.rotation.set(...rotation); environment.add(panel); });
+  const pmrem = new THREE.PMREMGenerator(renderer); const target = pmrem.fromScene(environment, .06); pmrem.dispose(); environment.traverse(child => { child.geometry?.dispose(); child.material?.dispose(); }); return target.texture;
+}
+scene.environment = createStudioEnvironment();
+
 function brushTexture() {
   const c = document.createElement("canvas"); c.width = c.height = 1024; const x = c.getContext("2d");
   x.fillStyle = "#07144d"; x.fillRect(0, 0, 1024, 1024); x.save(); x.translate(520, 520); x.rotate(-.72); x.filter = "blur(22px)";
@@ -73,9 +85,9 @@ const bgPlane = new THREE.Mesh(new THREE.PlaneGeometry(18, 12), bgMaterial); bgP
 
 const stickerGroups = { hero: [], end: [] }, stickerLoader = new THREE.TextureLoader();
 function createSticker(group, src, x, scale, phase, speed) {
-  const texture = stickerLoader.load(src, loaded => { loaded.colorSpace = THREE.SRGBColorSpace; loaded.needsUpdate = true; });
-  const material = new THREE.SpriteMaterial({ map: texture, transparent: true, opacity: group === "hero" ? .96 : 0, depthWrite: false, depthTest: true });
-  const sprite = new THREE.Sprite(material); sprite.scale.set(scale, scale, 1); sprite.position.set(x, 4, -.72); sprite.userData = { x, phase, speed, baseScale: scale }; stickerGroups[group].push(sprite); scene.add(sprite); return sprite;
+  const texture = stickerLoader.load(src, loaded => { loaded.colorSpace = THREE.SRGBColorSpace; loaded.needsUpdate = true; sticker.userData.aspect = loaded.image.width / Math.max(loaded.image.height, 1); });
+  const material = new THREE.MeshBasicMaterial({ map: texture, transparent: false, opacity: 1, alphaTest: .075, depthWrite: true, depthTest: true, side: THREE.DoubleSide, toneMapped: false });
+  const sticker = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material); sticker.scale.set(scale, scale, 1); sticker.position.set(x, 4, -.72); sticker.renderOrder = -2; sticker.userData = { x, phase, speed, baseScale: scale, aspect: 1 }; stickerGroups[group].push(sticker); scene.add(sticker); return sticker;
 }
 createSticker("hero", sticker05Url, -2.7, .72, .4, .00013);
 createSticker("hero", sticker08Url, 1.75, .92, 3.1, .00011);
@@ -83,23 +95,28 @@ createSticker("hero", sticker10Url, 3.05, .68, 6.2, .000145);
 createSticker("end", sticker01Url, -2.9, .72, 1.3, .00012);
 createSticker("end", sticker09Url, .85, .66, 4.7, .00014);
 createSticker("end", sticker11Url, 2.8, .9, 7.1, .000105);
-function setStickerOpacity(group, opacity) { stickerGroups[group].forEach(sprite => { sprite.material.opacity = opacity; sprite.visible = opacity > .001; }); }
+function setStickerOpacity(group, opacity) { stickerGroups[group].forEach(sticker => { sticker.visible = opacity > .06; }); }
 
 const loader = new GLTFLoader();
 function loadModel(url) { return new Promise((resolve, reject) => loader.load(url, model => resolve(model.scene), undefined, reject)); }
 function normalizeModel(object, targetWidth) { const box = new THREE.Box3().setFromObject(object), size = box.getSize(new THREE.Vector3()), center = box.getCenter(new THREE.Vector3()); object.position.sub(center); object.scale.setScalar(targetWidth / Math.max(size.x, .001)); object.userData.baseScale = object.scale.x; return object; }
+function createLiquidBumpTexture() {
+  const canvas = document.createElement("canvas"); canvas.width = canvas.height = 256; const context = canvas.getContext("2d"), image = context.createImageData(256, 256);
+  for (let y = 0; y < 256; y++) for (let x = 0; x < 256; x++) { const wave = Math.sin(x * .075 + Math.sin(y * .031) * 2.2) + Math.sin(y * .061 + x * .018) + Math.sin((x + y) * .036); const value = Math.max(0, Math.min(255, 128 + wave * 26)), index = (y * 256 + x) * 4; image.data[index] = image.data[index + 1] = image.data[index + 2] = value; image.data[index + 3] = 255; }
+  context.putImageData(image, 0, 0); const texture = new THREE.CanvasTexture(canvas); texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.repeat.set(1.8, 1.25); return texture;
+}
+const liquidBump = createLiquidBumpTexture();
 function applyWaterMaterial(object) {
   object.traverse(child => {
     if (!child.isMesh) return;
-    child.material = new THREE.MeshPhysicalMaterial({ color: 0xd9e0ff, transparent: false, opacity: 1, transmission: .96, thickness: .92, ior: 1.33, roughness: .035, metalness: 0, clearcoat: 1, clearcoatRoughness: .018, specularIntensity: 1, attenuationColor: new THREE.Color(0x3658df), attenuationDistance: 4.4, envMapIntensity: 1.18, depthWrite: true });
+    child.material = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: false, opacity: 1, transmission: 1, thickness: .56, ior: 1.42, roughness: .025, metalness: 0, clearcoat: .72, clearcoatRoughness: .045, specularIntensity: 1, attenuationColor: new THREE.Color(0xaec2ff), attenuationDistance: 14, dispersion: .11, envMapIntensity: 1.8, bumpMap: liquidBump, bumpScale: .08, depthWrite: true, side: THREE.FrontSide });
   });
 }
 function setCursorOpacity(opacity) { if (!cursor3d) return; cursor3d.traverse(child => { if (child.isMesh) { child.material.transparent = true; child.material.opacity = opacity; child.material.depthWrite = opacity > .98; } }); }
-let hello, cursor3d, contactModel;
+let hello, cursor3d;
 const modelsReady = Promise.all([
   loadModel(helloModelUrl).then(model => { hello = normalizeModel(model, 5.1); applyWaterMaterial(hello); hello.position.set(.15, .15, 0); hello.rotation.set(-.08, -.12, -.03); scene.add(hello); }),
-  loadModel(cursorModelUrl).then(model => { cursor3d = normalizeModel(model, .48); cursor3d.position.set(3.1, -1.7, .4); cursor3d.rotation.set(-.2, .2, -.18); cursor3d.traverse(child => { if (child.isMesh) { child.material = child.material.clone(); child.material.color?.set(0x168dff); child.material.metalness = .08; child.material.roughness = .22; child.material.transparent = true; child.material.opacity = 1; } }); scene.add(cursor3d); }),
-  loadModel(contactModelUrl).then(model => { contactModel = normalizeModel(model, 3.75); applyWaterMaterial(contactModel); contactModel.position.set(.2, -1.55, -.15); contactModel.rotation.set(-.14, -.08, -.04); contactModel.visible = false; scene.add(contactModel); })
+  loadModel(cursorModelUrl).then(model => { cursor3d = normalizeModel(model, .48); cursor3d.position.set(3.1, -1.7, .4); cursor3d.rotation.set(-.2, .2, -.18); cursor3d.traverse(child => { if (child.isMesh) { child.material = child.material.clone(); child.material.color?.set(0x168dff); child.material.metalness = .08; child.material.roughness = .22; child.material.transparent = true; child.material.opacity = 1; } }); scene.add(cursor3d); })
 ]);
 
 const starGeometry = new THREE.BufferGeometry(), starPoints = [], starColors = [], starAlphas = [], color = new THREE.Color();
@@ -111,8 +128,8 @@ const stars = new THREE.LineSegments(starGeometry, trailMaterial()); stars.posit
 const starsNear = new THREE.LineSegments(starGeometry.clone(), trailMaterial()); starsNear.position.z = -.2; starsNear.scale.setScalar(.48); starsNear.rotation.z = .035; scene.add(starsNear);
 
 const pointer = { x: 0, y: 0 };
-addEventListener("pointermove", event => { pointer.x = event.clientX / innerWidth * 2 - 1; pointer.y = -(event.clientY / innerHeight * 2 - 1); document.getElementById("coordinates").textContent = `${String(event.clientX).padStart(4,"0")} X ${String(event.clientY).padStart(4,"0")} Y`; });
-function resize() { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); bgPlane.scale.set(innerWidth / Math.max(innerHeight, 1), 1, 1); if (hello?.userData.baseScale) { const scale = hello.userData.baseScale * (innerWidth < 760 ? .54 : 1); hello.scale.setScalar(scale); hello.position.y = innerWidth < 760 ? .05 : .15; } if (cursor3d?.userData.baseScale) { const scale = cursor3d.userData.baseScale * (innerWidth < 760 ? .72 : 1); cursor3d.scale.setScalar(scale); cursor3d.position.x = innerWidth < 760 ? 1.2 : 3.1; } if (contactModel?.userData.baseScale) { const scale = contactModel.userData.baseScale * (innerWidth < 760 ? .62 : 1); contactModel.scale.setScalar(scale); } }
+addEventListener("pointermove", event => { pointer.x = event.clientX / innerWidth * 2 - 1; pointer.y = -(event.clientY / innerHeight * 2 - 1); });
+function resize() { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); bgPlane.scale.set(innerWidth / Math.max(innerHeight, 1), 1, 1); if (hello?.userData.baseScale) { const scale = hello.userData.baseScale * (innerWidth < 760 ? .54 : 1); hello.scale.setScalar(scale); hello.position.y = innerWidth < 760 ? .05 : .15; } if (cursor3d?.userData.baseScale) { const scale = cursor3d.userData.baseScale * (innerWidth < 760 ? .72 : 1); cursor3d.scale.setScalar(scale); cursor3d.position.x = innerWidth < 760 ? 1.2 : 3.1; } }
 addEventListener("resize", resize); resize();
 
 const scroller = document.getElementById("scroller");
@@ -142,7 +159,7 @@ ScrollTrigger.create({ trigger: ".manifesto-wrap", start: "top top", end: "botto
   const p = self.progress;
   scene.background.copy(blackColor); bgMaterial.opacity = 0; const endDots = Math.max(0, Math.min(1, (p - .94) / .06)); setPixelTransition(endDots, "#07144d");
   const density = Math.max(0, Math.min(1, (p - .18) / .54)), visibleLines = Math.round(18 + density * 502), exit = Math.max(0, Math.min(1, (p - .84) / .128)), starOpacity = p < .18 ? 0 : p < .24 ? (p - .18) / .06 : 1 - exit, trailScale = THREE.MathUtils.lerp(1, .035, exit), farScale = (.24 + density * 2.95) * trailScale, nearScale = (.16 + density * 3.72) * trailScale; stars.geometry.setDrawRange(0, visibleLines * 2); starsNear.geometry.setDrawRange(0, Math.round(visibleLines * .58) * 2); stars.material.uniforms.uOpacity.value = starOpacity; starsNear.material.uniforms.uOpacity.value = starOpacity * .38; stars.rotation.z = Math.sin(p * 8.7) * .023 + Math.sin(p * 3.1) * .031; starsNear.rotation.z = stars.rotation.z + .028 + Math.sin(p * 6.2) * .012; stars.scale.set(farScale * (1 + Math.sin(p * 9) * .025), farScale * (.97 + Math.cos(p * 7) * .02), farScale); starsNear.scale.set(nearScale * (.98 + Math.cos(p * 8) * .02), nearScale * (1 + Math.sin(p * 6) * .025), nearScale);
-  if (cursor3d) { const base = cursor3d.userData.baseScale * (innerWidth < 760 ? .72 : 1), frontX = -.2, frontY = .2, frontZ = .04; if (p < .065) { cursor3d.visible = true; setCursorOpacity(1); cursor3d.scale.setScalar(base * 1.18); cursor3d.position.set(0, 1.72, .4); cursor3d.rotation.set(frontX, frontY, frontZ); } else if (p < .16) { const raw = (p - .065) / .095, flip = raw * raw * (3 - 2 * raw); cursor3d.visible = true; setCursorOpacity(1); cursor3d.scale.setScalar(base * THREE.MathUtils.lerp(1.18, 34, flip)); cursor3d.position.set(0, THREE.MathUtils.lerp(1.72, 0, flip), .4); cursor3d.rotation.set(frontX, frontY + Math.sin(flip * Math.PI) * .22, frontZ + flip * Math.PI * 2); } else if (p < .22) { const fade = (p - .16) / .06; cursor3d.visible = true; setCursorOpacity(1 - fade); cursor3d.scale.setScalar(base * 34); cursor3d.position.set(0, 0, .4); cursor3d.rotation.set(frontX, frontY, frontZ + Math.PI * 2); } else if (p < .84) { cursor3d.visible = false; setCursorOpacity(1); } else { const raw = (p - .84) / .128, shrink = Math.max(0, Math.min(1, raw)), smooth = shrink * shrink * (3 - 2 * shrink); cursor3d.visible = true; setCursorOpacity(1); cursor3d.scale.setScalar(base * THREE.MathUtils.lerp(34, 1, smooth)); cursor3d.position.set(0, 0, .4); cursor3d.rotation.set(frontX, frontY + Math.sin(smooth * Math.PI) * .2, frontZ + smooth * Math.PI * 2); } }
+  if (cursor3d) { const base = cursor3d.userData.baseScale * (innerWidth < 760 ? .72 : 1), frontX = -.2, frontY = .2, frontZ = .04; if (p < .065) { cursor3d.visible = true; setCursorOpacity(1); cursor3d.scale.setScalar(base * 1.18); cursor3d.position.set(0, 1.72, .4); cursor3d.rotation.set(frontX, frontY, frontZ); } else if (p < .16) { const raw = (p - .065) / .095, flip = raw * raw * (3 - 2 * raw); cursor3d.visible = true; setCursorOpacity(1); cursor3d.scale.setScalar(base * THREE.MathUtils.lerp(1.18, 34, flip)); cursor3d.position.set(0, 1.72, .4); cursor3d.rotation.set(frontX, frontY + Math.sin(flip * Math.PI) * .22, frontZ + flip * Math.PI * 2); } else if (p < .22) { const fade = (p - .16) / .06; cursor3d.visible = true; setCursorOpacity(1 - fade); cursor3d.scale.setScalar(base * 34); cursor3d.position.set(0, 1.72, .4); cursor3d.rotation.set(frontX, frontY, frontZ + Math.PI * 2); } else if (p < .84) { cursor3d.visible = false; setCursorOpacity(1); } else { const raw = (p - .84) / .128, shrink = Math.max(0, Math.min(1, raw)), smooth = shrink * shrink * (3 - 2 * shrink); cursor3d.visible = true; setCursorOpacity(1); cursor3d.scale.setScalar(base * THREE.MathUtils.lerp(34, 1, smooth)); cursor3d.position.set(0, 0, .4); cursor3d.rotation.set(frontX, frontY + Math.sin(smooth * Math.PI) * .2, frontZ + smooth * Math.PI * 2); } }
   gsap.set(".statement", { color: "#fff" });
   const set = (selector, opacity) => gsap.set(selector, { opacity, scale: .9 + opacity * .1 });
   set(".statement-a", p < .3 ? Math.min(1, p * 8 + .15) * Math.min(1, (.34 - p) * 9) : 0);
@@ -150,12 +167,11 @@ ScrollTrigger.create({ trigger: ".manifesto-wrap", start: "top top", end: "botto
   const valueOpacity = p > .53 && p < .78 ? Math.min(1, (p - .53) * 8) * Math.min(1, (.8 - p) * 8) : 0; gsap.set(".value", { opacity: valueOpacity });
   set(".statement-c", p > .74 ? Math.min(1, (p - .74) * 7) * Math.min(1, (1 - p) * 15) : 0);
   const endReveal = Math.max(0, Math.min(1, (p - .962) / .038)); setStickerOpacity("end", endReveal * .92);
-  if (contactModel) { const reveal = endReveal; contactModel.visible = reveal > .08; const base = contactModel.userData.baseScale * (innerWidth < 760 ? .54 : .94); contactModel.scale.setScalar(base * (.7 + reveal * .3)); contactModel.position.y = -1.95 + reveal * .5; contactModel.rotation.y = -.75 + reveal * .67; }
 } });
 ScrollTrigger.create({ start: 0, end: "max", onUpdate(self) { const rail = document.querySelector(".scroll-rail i"), ring = document.querySelector(".progress-value"), max = 168; gsap.set(rail, { y: self.progress * max }); ring.style.strokeDashoffset = String(1 - self.progress); document.getElementById("scroll-progress").setAttribute("aria-label", `Back to top, ${Math.round(self.progress * 100)}% viewed`); } });
 document.getElementById("scroll-progress").addEventListener("click", () => lenis.scrollTo(0, { duration: 1.25 }));
 
-function render() { requestAnimationFrame(render); const now = performance.now(), mobile = innerWidth < 760; Object.values(stickerGroups).flat().forEach(sprite => { if (!sprite.visible) return; const travel = (now * sprite.userData.speed + sprite.userData.phase) % 9.2, size = sprite.userData.baseScale * (mobile ? .72 : 1); sprite.position.x = sprite.userData.x * (mobile ? .43 : 1) + Math.sin(now * .00035 + sprite.userData.phase) * (mobile ? .08 : .18); sprite.position.y = 4.35 - travel; sprite.scale.set(size, size, 1); }); if (hello && scenePhase === 0) { hello.rotation.x += (pointer.y * .08 - hello.rotation.x) * .035; hello.rotation.y += (pointer.x * .14 - hello.rotation.y) * .035; } if (cursor3d && !cursorLocked && cursor3d.visible) { cursor3d.position.x += (((mobile ? 1.2 : 3.05) + pointer.x * .25) - cursor3d.position.x) * .04; cursor3d.position.y += (((mobile ? -1.3 : -1.7) + pointer.y * .2) - cursor3d.position.y) * .04; } if (contactModel?.visible) contactModel.rotation.z = Math.sin(now * .00035) * .025; renderer.render(scene, camera); }
+function render() { requestAnimationFrame(render); const now = performance.now(), mobile = innerWidth < 760; liquidBump.offset.set(now * .000018 % 1, now * .000011 % 1); Object.values(stickerGroups).flat().forEach(sticker => { if (!sticker.visible) return; const travel = (now * sticker.userData.speed + sticker.userData.phase) % 9.2, size = sticker.userData.baseScale * (mobile ? .72 : 1); sticker.position.x = sticker.userData.x * (mobile ? .43 : 1) + Math.sin(now * .00035 + sticker.userData.phase) * (mobile ? .08 : .18); sticker.position.y = 4.35 - travel; sticker.scale.set(size * sticker.userData.aspect, size, 1); }); if (hello && scenePhase === 0) { hello.rotation.x += (pointer.y * .08 - hello.rotation.x) * .035; hello.rotation.y += (pointer.x * .14 - hello.rotation.y) * .035; } if (cursor3d && !cursorLocked && cursor3d.visible) { cursor3d.position.x += (((mobile ? 1.2 : 3.05) + pointer.x * .25) - cursor3d.position.x) * .04; cursor3d.position.y += (((mobile ? -1.3 : -1.7) + pointer.y * .2) - cursor3d.position.y) * .04; } renderer.render(scene, camera); }
 render();
 
 const themeButton = document.getElementById("theme-button"), mobileTheme = document.getElementById("mobile-theme"); let themeIndex = 0;

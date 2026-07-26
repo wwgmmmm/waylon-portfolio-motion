@@ -44,7 +44,7 @@ body.theme-paper{--label:#000;--label2:rgba(0,0,0,.43)}body.theme-dark{--label:#
 
 /* Reference-led refinement: water type, falling stickers and archive pairing. */
 .scroll-progress{right:var(--pad-x);bottom:24px;width:20px;height:20px;padding:0}
-.scroll-progress circle{stroke-width:3.4}
+.scroll-progress circle{stroke-width:5}
 .progress-track{stroke:rgba(255,255,255,.28)}
 .progress-arrow{display:none}
 .sticker-shell{top:-24vh;bottom:auto;opacity:0;transform:none}
