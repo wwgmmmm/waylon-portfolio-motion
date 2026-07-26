@@ -152,9 +152,7 @@ const liquidNormal = createLiquidNormalTexture();
 function applyWaterMaterial(object) {
   object.traverse(child => {
     if (!child.isMesh) return;
-    child.material = isIOS
-      ? new THREE.MeshPhysicalMaterial({ color: 0x2d6bc5, transparent: true, opacity: .76, transmission: 0, roughness: .065, metalness: .06, clearcoat: .38, clearcoatRoughness: .09, specularIntensity: .58, envMapIntensity: 1.25, normalMap: liquidNormal, normalScale: new THREE.Vector2(.58, .44), depthWrite: true, side: THREE.FrontSide })
-      : new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: false, opacity: 1, transmission: 1, thickness: 1.72, ior: 1.56, roughness: .018, metalness: 0, clearcoat: .025, clearcoatRoughness: .09, specularIntensity: .62, attenuationColor: new THREE.Color(0xeaf3ff), attenuationDistance: 58, dispersion: .88, envMapIntensity: 1.28, bumpMap: liquidBump, bumpScale: .41, normalMap: liquidNormal, normalScale: new THREE.Vector2(.98, .76), depthWrite: true, side: THREE.FrontSide });
+    child.material = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: false, opacity: 1, transmission: 1, thickness: 1.72, ior: 1.56, roughness: .018, metalness: 0, clearcoat: .025, clearcoatRoughness: .09, specularIntensity: .62, attenuationColor: new THREE.Color(0xeaf3ff), attenuationDistance: 58, dispersion: .88, envMapIntensity: 1.28, bumpMap: liquidBump, bumpScale: .41, normalMap: liquidNormal, normalScale: new THREE.Vector2(.98, .76), depthWrite: true, side: THREE.FrontSide });
   });
 }
 function setCursorOpacity(cursor, opacity) { if (!cursor) return; cursor.traverse(child => { if (child.isMesh) child.material.opacity = opacity; }); }
