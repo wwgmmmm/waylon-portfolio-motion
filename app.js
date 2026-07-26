@@ -99,6 +99,15 @@ const bgPlane = new THREE.Mesh(new THREE.PlaneGeometry(18, 12), bgMaterial); bgP
 
 const stickerGroups = { hero: [], end: [] }, stickerLoader = new THREE.TextureLoader();
 function createSticker(group, src, x, scale, phase, speed) {
+  if (group === "end") {
+    const sticker = document.createElement("img");
+    sticker.className = "end-sticker"; sticker.src = src; sticker.alt = ""; sticker.decoding = "async";
+    sticker.style.setProperty("--sticker-x", `${50 + x * 12}%`);
+    sticker.style.setProperty("--sticker-size", `${Math.round(scale * 112)}px`);
+    sticker.style.setProperty("--sticker-duration", `${Math.round(17 + phase * .55)}s`);
+    sticker.style.setProperty("--sticker-delay", `${(-phase * 2.1).toFixed(1)}s`);
+    document.querySelector(".end-sticker-layer").appendChild(sticker); stickerGroups.end.push(sticker); return sticker;
+  }
   const texture = stickerLoader.load(src, loaded => { loaded.colorSpace = THREE.SRGBColorSpace; loaded.needsUpdate = true; sticker.userData.aspect = loaded.image.width / Math.max(loaded.image.height, 1); });
   const material = new THREE.MeshBasicMaterial({ map: texture, transparent: false, opacity: 1, alphaTest: .075, depthWrite: true, depthTest: true, side: THREE.DoubleSide, toneMapped: false });
   const sticker = new THREE.Mesh(new THREE.PlaneGeometry(1, 1), material); sticker.scale.set(scale, scale, 1); sticker.position.set(x, 4, -.72); sticker.renderOrder = -2; sticker.visible = group === "hero"; sticker.userData = { x, phase, speed, baseScale: scale, aspect: 1 }; stickerGroups[group].push(sticker); scene.add(sticker); return sticker;
@@ -109,7 +118,10 @@ createSticker("hero", sticker10Url, 3.05, .68, 6.2, .000145);
 createSticker("end", sticker01Url, -2.9, .72, 1.3, .00012);
 createSticker("end", sticker09Url, .85, .66, 4.7, .00014);
 createSticker("end", sticker11Url, 2.8, .9, 7.1, .000105);
-function setStickerOpacity(group, opacity) { stickerGroups[group].forEach(sticker => { sticker.visible = opacity > .06; }); }
+function setStickerOpacity(group, opacity) {
+  if (group === "end") { document.querySelector(".end-sticker-layer").classList.toggle("is-visible", opacity > .06); return; }
+  stickerGroups[group].forEach(sticker => { sticker.visible = opacity > .06; });
+}
 
 const loader = new GLTFLoader();
 function loadModel(url) { return new Promise((resolve, reject) => loader.load(url, model => resolve(model.scene), undefined, reject)); }
@@ -120,10 +132,22 @@ function createLiquidBumpTexture() {
   context.putImageData(image, 0, 0); const texture = new THREE.CanvasTexture(canvas); texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.repeat.set(1.8, 1.25); return texture;
 }
 const liquidBump = createLiquidBumpTexture();
+function createLiquidNormalTexture() {
+  const size = 256, canvas = document.createElement("canvas"); canvas.width = canvas.height = size;
+  const context = canvas.getContext("2d"), image = context.createImageData(size, size), height = new Float32Array(size * size);
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) height[y * size + x] = Math.sin(x * .09 + Math.sin(y * .035) * 3.1) + .72 * Math.sin(y * .072 - x * .023) + .55 * Math.sin((x + y) * .045);
+  for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+    const left = height[y * size + (x + size - 1) % size], right = height[y * size + (x + 1) % size], up = height[((y + size - 1) % size) * size + x], down = height[((y + 1) % size) * size + x];
+    const nx = (left - right) * 1.35, ny = (up - down) * 1.35, nz = 1, length = Math.hypot(nx, ny, nz), index = (y * size + x) * 4;
+    image.data[index] = (nx / length * .5 + .5) * 255; image.data[index + 1] = (ny / length * .5 + .5) * 255; image.data[index + 2] = (nz / length * .5 + .5) * 255; image.data[index + 3] = 255;
+  }
+  context.putImageData(image, 0, 0); const texture = new THREE.CanvasTexture(canvas); texture.wrapS = texture.wrapT = THREE.RepeatWrapping; texture.repeat.set(2.15, 1.55); return texture;
+}
+const liquidNormal = createLiquidNormalTexture();
 function applyWaterMaterial(object) {
   object.traverse(child => {
     if (!child.isMesh) return;
-    child.material = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: false, opacity: 1, transmission: 1, thickness: .92, ior: 1.36, roughness: .065, metalness: 0, clearcoat: .08, clearcoatRoughness: .2, specularIntensity: .32, attenuationColor: new THREE.Color(0xe0e8ff), attenuationDistance: 42, dispersion: .28, envMapIntensity: .5, bumpMap: liquidBump, bumpScale: .22, depthWrite: true, side: THREE.FrontSide });
+    child.material = new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: false, opacity: 1, transmission: 1, thickness: 1.72, ior: 1.56, roughness: .018, metalness: 0, clearcoat: .025, clearcoatRoughness: .09, specularIntensity: .62, attenuationColor: new THREE.Color(0xeaf3ff), attenuationDistance: 58, dispersion: .88, envMapIntensity: 1.28, bumpMap: liquidBump, bumpScale: .41, normalMap: liquidNormal, normalScale: new THREE.Vector2(.98, .76), depthWrite: true, side: THREE.FrontSide });
   });
 }
 function setCursorOpacity(cursor, opacity) { if (!cursor) return; cursor.traverse(child => { if (child.isMesh) child.material.opacity = opacity; }); }
@@ -173,9 +197,10 @@ ScrollTrigger.create({ trigger: ".work", start: "top bottom", end: "bottom top",
 function titleCursorY() { const rect = manifestoTitle.getBoundingClientRect(), screenY = rect.top - (innerWidth < 760 ? 74 : 98), distance = camera.position.z - .4, worldHeight = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov * .5)) * distance; return (.5 - screenY / innerHeight) * worldHeight; }
 function setManifestoIntroCursor() { if (!manifestoCursor) return; const base = manifestoCursor.userData.baseScale * (innerWidth < 760 ? .72 : 1); manifestoCursor.visible = true; setCursorOpacity(manifestoCursor, 1); manifestoCursor.scale.setScalar(base * 1.18); manifestoCursor.position.set(0, titleCursorY(), .4); manifestoCursor.rotation.set(-.2, .2, .04); }
 ScrollTrigger.create({ trigger: ".manifesto-wrap", start: "top bottom", end: "top top", onEnter: setManifestoIntroCursor, onEnterBack: setManifestoIntroCursor, onUpdate: setManifestoIntroCursor, onLeaveBack() { if (manifestoCursor) manifestoCursor.visible = false; } });
-ScrollTrigger.create({ trigger: ".manifesto-wrap", start: "top top", end: () => ScrollTrigger.maxScroll(scroller), invalidateOnRefresh: true, onEnter: () => { scenePhase = 1; if (cursor3d) cursor3d.visible = false; if (manifestoCursor) manifestoCursor.visible = true; }, onEnterBack: () => { scenePhase = 1; if (cursor3d) cursor3d.visible = false; if (manifestoCursor) manifestoCursor.visible = true; }, onLeave: () => { scenePhase = 2; scene.background.copy(skyColor); bgMaterial.opacity = .38; setPixelTransition(0, "#07144d"); setStickerOpacity("end", .92); }, onLeaveBack: () => { scenePhase = 0; setStickerOpacity("end", 0); stars.material.uniforms.uOpacity.value = 0; starsNear.material.uniforms.uOpacity.value = 0; setManifestoIntroCursor(); }, onUpdate(self) {
+ScrollTrigger.create({ trigger: ".manifesto-wrap", start: "top top", end: () => ScrollTrigger.maxScroll(scroller), invalidateOnRefresh: true, onEnter: () => { scenePhase = 1; if (cursor3d) cursor3d.visible = false; if (manifestoCursor) manifestoCursor.visible = true; }, onEnterBack: () => { scenePhase = 1; if (cursor3d) cursor3d.visible = false; if (manifestoCursor) manifestoCursor.visible = true; }, onLeave: () => { scenePhase = 2; scene.background.copy(skyColor); bgMaterial.opacity = 1; setPixelTransition(0, "#07144d"); setStickerOpacity("end", .92); }, onLeaveBack: () => { scenePhase = 0; setStickerOpacity("end", 0); stars.material.uniforms.uOpacity.value = 0; starsNear.material.uniforms.uOpacity.value = 0; setManifestoIntroCursor(); }, onUpdate(self) {
   const p = self.progress;
-  pixelTransition.classList.toggle("protect-content", p >= .9); scene.background.copy(blackColor); bgMaterial.opacity = 0; const endDots = Math.max(0, Math.min(1, (p - .91) / .09)); setPixelTransition(endDots, "#07144d");
+  const endDots = Math.max(0, Math.min(1, (p - .91) / .055)), gradientReveal = Math.max(0, Math.min(1, (p - .965) / .035));
+  pixelTransition.classList.toggle("protect-content", p >= .9); scene.background.lerpColors(blackColor, skyColor, gradientReveal); bgMaterial.opacity = gradientReveal; setPixelTransition(endDots, "#07144d"); if (endDots > 0) pixelTransition.style.opacity = String(1 - gradientReveal);
   const density = Math.max(0, Math.min(1, (p - .25) / .48)), visibleLines = Math.round(18 + density * 502), exit = Math.max(0, Math.min(1, (p - .76) / .16)), starOpacity = p < .22 ? 0 : p < .3 ? (p - .22) / .08 : 1 - exit, trailScale = THREE.MathUtils.lerp(1, .035, exit), farScale = (.24 + density * 2.95) * trailScale, nearScale = (.16 + density * 3.72) * trailScale; stars.geometry.setDrawRange(0, visibleLines * 2); starsNear.geometry.setDrawRange(0, Math.round(visibleLines * .58) * 2); stars.material.uniforms.uOpacity.value = Math.max(0, starOpacity); starsNear.material.uniforms.uOpacity.value = Math.max(0, starOpacity) * .38; stars.rotation.z = Math.sin(p * 8.7) * .023 + Math.sin(p * 3.1) * .031; starsNear.rotation.z = stars.rotation.z + .028 + Math.sin(p * 6.2) * .012; stars.scale.set(farScale * (1 + Math.sin(p * 9) * .025), farScale * (.97 + Math.cos(p * 7) * .02), farScale); starsNear.scale.set(nearScale * (.98 + Math.cos(p * 8) * .02), nearScale * (1 + Math.sin(p * 6) * .025), nearScale);
   if (manifestoCursor) { const base = manifestoCursor.userData.baseScale * (innerWidth < 760 ? .72 : 1), frontX = -.2, frontY = .2, frontZ = .04, anchorY = titleCursorY(); if (p < .11) { manifestoCursor.visible = true; setCursorOpacity(manifestoCursor, 1); manifestoCursor.scale.setScalar(base * 1.18); manifestoCursor.position.set(0, anchorY, .4); manifestoCursor.rotation.set(frontX, frontY, frontZ); } else if (p < .23) { const raw = (p - .11) / .12, flip = raw * raw * (3 - 2 * raw); manifestoCursor.visible = true; setCursorOpacity(manifestoCursor, 1); manifestoCursor.scale.setScalar(base * THREE.MathUtils.lerp(1.18, 34, flip)); manifestoCursor.position.set(0, anchorY, .4); manifestoCursor.rotation.set(frontX, frontY + Math.sin(flip * Math.PI) * .22, frontZ + flip * Math.PI * 2); } else if (p < .29) { const fade = (p - .23) / .06; manifestoCursor.visible = true; setCursorOpacity(manifestoCursor, 1 - fade); manifestoCursor.scale.setScalar(base * 34); manifestoCursor.position.set(0, anchorY, .4); manifestoCursor.rotation.set(frontX, frontY, frontZ + Math.PI * 2); } else if (p < .76) { manifestoCursor.visible = false; setCursorOpacity(manifestoCursor, 1); } else { const smooth = exit * exit * (3 - 2 * exit); manifestoCursor.visible = true; setCursorOpacity(manifestoCursor, 1); manifestoCursor.scale.setScalar(base * THREE.MathUtils.lerp(34, 1, smooth)); manifestoCursor.position.set(0, 1.72, .4); manifestoCursor.rotation.set(frontX, frontY + Math.sin(smooth * Math.PI) * .2, frontZ + smooth * Math.PI * 2); } }
   gsap.set(".statement", { color: "#fff" });
@@ -189,7 +214,7 @@ ScrollTrigger.create({ trigger: ".manifesto-wrap", start: "top top", end: () => 
 ScrollTrigger.create({ start: 0, end: "max", onUpdate(self) { const rail = document.querySelector(".scroll-rail i"), ring = document.querySelector(".progress-value"), max = 168; gsap.set(rail, { y: self.progress * max }); ring.style.strokeDashoffset = String(1 - self.progress); document.getElementById("scroll-progress").setAttribute("aria-label", `Back to top, ${Math.round(self.progress * 100)}% viewed`); } });
 document.getElementById("scroll-progress").addEventListener("click", () => lenis.scrollTo(0, { duration: 1.25 }));
 
-function render() { requestAnimationFrame(render); const now = performance.now(), mobile = innerWidth < 760; liquidBump.offset.set(now * .000018 % 1, now * .000011 % 1); Object.values(stickerGroups).flat().forEach(sticker => { if (!sticker.visible) return; const travel = (now * sticker.userData.speed + sticker.userData.phase) % 9.2, size = sticker.userData.baseScale * (mobile ? .72 : 1); sticker.position.x = sticker.userData.x * (mobile ? .43 : 1) + Math.sin(now * .00035 + sticker.userData.phase) * (mobile ? .08 : .18); sticker.position.y = 4.35 - travel; sticker.scale.set(size * sticker.userData.aspect, size, 1); }); if (hello && scenePhase === 0) { hello.rotation.x += (pointer.y * .08 - hello.rotation.x) * .035; hello.rotation.y += (pointer.x * .14 - hello.rotation.y) * .035; } if (cursor3d?.visible) { cursor3d.position.x += (((mobile ? .25 : 3.05) + pointer.x * .16) - cursor3d.position.x) * .04; cursor3d.position.y += (((mobile ? -1.3 : -1.7) + pointer.y * .2) - cursor3d.position.y) * .04; } renderer.render(scene, camera); if (cursor3d?.visible || manifestoCursor?.visible) cursorRenderer.render(cursorScene, camera); else cursorRenderer.clear(); }
+function render() { requestAnimationFrame(render); const now = performance.now(), mobile = innerWidth < 760; liquidBump.offset.set(now * .000034 % 1, now * .000021 % 1); liquidNormal.offset.set(now * -.000019 % 1, now * .000027 % 1); liquidNormal.repeat.set(2.15 + Math.sin(now * .00042) * .12, 1.55 + Math.cos(now * .00037) * .1); stickerGroups.hero.forEach(sticker => { if (!sticker.visible) return; const travel = (now * sticker.userData.speed + sticker.userData.phase) % 9.2, size = sticker.userData.baseScale * (mobile ? .72 : 1); sticker.position.x = sticker.userData.x * (mobile ? .43 : 1) + Math.sin(now * .00035 + sticker.userData.phase) * (mobile ? .08 : .18); sticker.position.y = 4.35 - travel; sticker.scale.set(size * sticker.userData.aspect, size, 1); }); if (hello && scenePhase === 0) { hello.rotation.x += (pointer.y * .08 - hello.rotation.x) * .035; hello.rotation.y += (pointer.x * .14 - hello.rotation.y) * .035; } if (cursor3d?.visible) { cursor3d.position.x += (((mobile ? .25 : 3.05) + pointer.x * .16) - cursor3d.position.x) * .04; cursor3d.position.y += (((mobile ? -1.3 : -1.7) + pointer.y * .2) - cursor3d.position.y) * .04; } renderer.render(scene, camera); if (cursor3d?.visible || manifestoCursor?.visible) cursorRenderer.render(cursorScene, camera); else cursorRenderer.clear(); }
 render();
 
 const themeButton = document.getElementById("theme-button"), mobileTheme = document.getElementById("mobile-theme"); let themeIndex = 0;

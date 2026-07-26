@@ -69,6 +69,13 @@ body{background:#000;color:#fff}
 #loader span:after{background:#fff}
 .hud{mix-blend-mode:normal;color:#fff}
 .hud a,.hud button,#clock,.coordinates{color:#fff}
+
+/* End stickers sit above the dot wipe while the page copy remains on top. */
+.end-sticker-layer{position:fixed;inset:0;z-index:7;overflow:hidden;pointer-events:none;opacity:0;transition:opacity .24s linear}
+.end-sticker-layer.is-visible{opacity:1}
+.end-sticker{position:absolute;top:-24vh;left:var(--sticker-x);width:var(--sticker-size);height:auto;filter:drop-shadow(0 8px 16px rgba(0,0,0,.28));animation:end-sticker-fall var(--sticker-duration) linear var(--sticker-delay) infinite;will-change:transform}
+@keyframes end-sticker-fall{0%{transform:translate3d(-10px,0,0) rotate(-8deg)}25%{transform:translate3d(12px,36vh,0) rotate(5deg)}50%{transform:translate3d(-8px,72vh,0) rotate(-4deg)}75%{transform:translate3d(14px,108vh,0) rotate(7deg)}100%{transform:translate3d(-5px,144vh,0) rotate(-5deg)}}
+@media(max-width:760px){.end-sticker{width:min(var(--sticker-size),68px)}}
 .scroll-rail{background:rgba(255,255,255,.28)}
 .scroll-rail i{background:#fff}
 .scroll-progress{color:#fff}

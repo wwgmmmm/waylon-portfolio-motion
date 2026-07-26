@@ -13989,6 +13989,20 @@
   var stickerGroups = { hero: [], end: [] };
   var stickerLoader = new Uc();
   function createSticker(group, src, x2, scale, phase, speed) {
+    if (group === "end") {
+      const sticker2 = document.createElement("img");
+      sticker2.className = "end-sticker";
+      sticker2.src = src;
+      sticker2.alt = "";
+      sticker2.decoding = "async";
+      sticker2.style.setProperty("--sticker-x", `${50 + x2 * 12}%`);
+      sticker2.style.setProperty("--sticker-size", `${Math.round(scale * 112)}px`);
+      sticker2.style.setProperty("--sticker-duration", `${Math.round(17 + phase * 0.55)}s`);
+      sticker2.style.setProperty("--sticker-delay", `${(-phase * 2.1).toFixed(1)}s`);
+      document.querySelector(".end-sticker-layer").appendChild(sticker2);
+      stickerGroups.end.push(sticker2);
+      return sticker2;
+    }
     const texture = stickerLoader.load(src, (loaded) => {
       loaded.colorSpace = ei;
       loaded.needsUpdate = true;
@@ -14012,6 +14026,10 @@
   createSticker("end", s_09_default, 0.85, 0.66, 4.7, 14e-5);
   createSticker("end", s_11_default, 2.8, 0.9, 7.1, 105e-6);
   function setStickerOpacity(group, opacity) {
+    if (group === "end") {
+      document.querySelector(".end-sticker-layer").classList.toggle("is-visible", opacity > 0.06);
+      return;
+    }
     stickerGroups[group].forEach((sticker) => {
       sticker.visible = opacity > 0.06;
     });
@@ -14044,10 +14062,30 @@
     return texture;
   }
   var liquidBump = createLiquidBumpTexture();
+  function createLiquidNormalTexture() {
+    const size = 256, canvas2 = document.createElement("canvas");
+    canvas2.width = canvas2.height = size;
+    const context = canvas2.getContext("2d"), image = context.createImageData(size, size), height = new Float32Array(size * size);
+    for (let y2 = 0; y2 < size; y2++) for (let x2 = 0; x2 < size; x2++) height[y2 * size + x2] = Math.sin(x2 * 0.09 + Math.sin(y2 * 0.035) * 3.1) + 0.72 * Math.sin(y2 * 0.072 - x2 * 0.023) + 0.55 * Math.sin((x2 + y2) * 0.045);
+    for (let y2 = 0; y2 < size; y2++) for (let x2 = 0; x2 < size; x2++) {
+      const left = height[y2 * size + (x2 + size - 1) % size], right = height[y2 * size + (x2 + 1) % size], up2 = height[(y2 + size - 1) % size * size + x2], down = height[(y2 + 1) % size * size + x2];
+      const nx = (left - right) * 1.35, ny = (up2 - down) * 1.35, nz = 1, length = Math.hypot(nx, ny, nz), index = (y2 * size + x2) * 4;
+      image.data[index] = (nx / length * 0.5 + 0.5) * 255;
+      image.data[index + 1] = (ny / length * 0.5 + 0.5) * 255;
+      image.data[index + 2] = (nz / length * 0.5 + 0.5) * 255;
+      image.data[index + 3] = 255;
+    }
+    context.putImageData(image, 0, 0);
+    const texture = new uh(canvas2);
+    texture.wrapS = texture.wrapT = mt;
+    texture.repeat.set(2.15, 1.55);
+    return texture;
+  }
+  var liquidNormal = createLiquidNormalTexture();
   function applyWaterMaterial(object) {
     object.traverse((child) => {
       if (!child.isMesh) return;
-      child.material = new Kl({ color: 16777215, transparent: false, opacity: 1, transmission: 1, thickness: 0.92, ior: 1.36, roughness: 0.065, metalness: 0, clearcoat: 0.08, clearcoatRoughness: 0.2, specularIntensity: 0.32, attenuationColor: new Pr(14739711), attenuationDistance: 42, dispersion: 0.28, envMapIntensity: 0.5, bumpMap: liquidBump, bumpScale: 0.22, depthWrite: true, side: u });
+      child.material = new Kl({ color: 16777215, transparent: false, opacity: 1, transmission: 1, thickness: 1.72, ior: 1.56, roughness: 0.018, metalness: 0, clearcoat: 0.025, clearcoatRoughness: 0.09, specularIntensity: 0.62, attenuationColor: new Pr(15397887), attenuationDistance: 58, dispersion: 0.88, envMapIntensity: 1.28, bumpMap: liquidBump, bumpScale: 0.41, normalMap: liquidNormal, normalScale: new _s(0.98, 0.76), depthWrite: true, side: u });
     });
   }
   function setCursorOpacity(cursor, opacity) {
@@ -14251,7 +14289,7 @@
   }, onLeave: () => {
     scenePhase = 2;
     scene.background.copy(skyColor);
-    bgMaterial.opacity = 0.38;
+    bgMaterial.opacity = 1;
     setPixelTransition(0, "#07144d");
     setStickerOpacity("end", 0.92);
   }, onLeaveBack: () => {
@@ -14262,11 +14300,12 @@
     setManifestoIntroCursor();
   }, onUpdate(self2) {
     const p2 = self2.progress;
+    const endDots = Math.max(0, Math.min(1, (p2 - 0.91) / 0.055)), gradientReveal = Math.max(0, Math.min(1, (p2 - 0.965) / 0.035));
     pixelTransition.classList.toggle("protect-content", p2 >= 0.9);
-    scene.background.copy(blackColor);
-    bgMaterial.opacity = 0;
-    const endDots = Math.max(0, Math.min(1, (p2 - 0.91) / 0.09));
+    scene.background.lerpColors(blackColor, skyColor, gradientReveal);
+    bgMaterial.opacity = gradientReveal;
     setPixelTransition(endDots, "#07144d");
+    if (endDots > 0) pixelTransition.style.opacity = String(1 - gradientReveal);
     const density = Math.max(0, Math.min(1, (p2 - 0.25) / 0.48)), visibleLines = Math.round(18 + density * 502), exit = Math.max(0, Math.min(1, (p2 - 0.76) / 0.16)), starOpacity = p2 < 0.22 ? 0 : p2 < 0.3 ? (p2 - 0.22) / 0.08 : 1 - exit, trailScale = Ss.lerp(1, 0.035, exit), farScale = (0.24 + density * 2.95) * trailScale, nearScale = (0.16 + density * 3.72) * trailScale;
     stars.geometry.setDrawRange(0, visibleLines * 2);
     starsNear.geometry.setDrawRange(0, Math.round(visibleLines * 0.58) * 2);
@@ -14330,8 +14369,10 @@
   function render() {
     requestAnimationFrame(render);
     const now = performance.now(), mobile = innerWidth < 760;
-    liquidBump.offset.set(now * 18e-6 % 1, now * 11e-6 % 1);
-    Object.values(stickerGroups).flat().forEach((sticker) => {
+    liquidBump.offset.set(now * 34e-6 % 1, now * 21e-6 % 1);
+    liquidNormal.offset.set(now * -19e-6 % 1, now * 27e-6 % 1);
+    liquidNormal.repeat.set(2.15 + Math.sin(now * 42e-5) * 0.12, 1.55 + Math.cos(now * 37e-5) * 0.1);
+    stickerGroups.hero.forEach((sticker) => {
       if (!sticker.visible) return;
       const travel = (now * sticker.userData.speed + sticker.userData.phase) % 9.2, size = sticker.userData.baseScale * (mobile ? 0.72 : 1);
       sticker.position.x = sticker.userData.x * (mobile ? 0.43 : 1) + Math.sin(now * 35e-5 + sticker.userData.phase) * (mobile ? 0.08 : 0.18);
