@@ -1,6 +1,7 @@
 import * as THREE from "./assets/vendor/three.module.min.js";
 import { GLTFLoader } from "./assets/vendor/GLTFLoader.js";
 const helloModelUrl = "./assets/reference/model/hello.glb";
+const helloCompressedUrl = "./assets/reference/model/hello.glb.bin";
 const cursorModelUrl = "./assets/reference/model/cursor.glb";
 const sticker01Url = "./assets/reference/stickers/s_01.webp";
 const sticker05Url = "./assets/reference/stickers/s_05.webp";
@@ -121,6 +122,14 @@ function setStickerOpacity(group, opacity) {
 
 const loader = new GLTFLoader();
 function loadModel(url) { return new Promise((resolve, reject) => loader.load(url, model => resolve(model.scene), undefined, reject)); }
+async function loadHelloModel() {
+  if (!("DecompressionStream" in window)) return loadModel(helloModelUrl);
+  try {
+    const response = await fetch(helloCompressedUrl); if (!response.ok || !response.body) throw new Error("Compressed model unavailable");
+    const stream = response.body.pipeThrough(new DecompressionStream("gzip")), buffer = await new Response(stream).arrayBuffer();
+    return await new Promise((resolve, reject) => loader.parse(buffer, "./assets/reference/model/", model => resolve(model.scene), reject));
+  } catch { return loadModel(helloModelUrl); }
+}
 function normalizeModel(object, targetWidth) { const box = new THREE.Box3().setFromObject(object), size = box.getSize(new THREE.Vector3()), center = box.getCenter(new THREE.Vector3()); object.position.sub(center); object.scale.setScalar(targetWidth / Math.max(size.x, .001)); object.userData.baseScale = object.scale.x; return object; }
 function createLiquidBumpTexture() {
   const canvas = document.createElement("canvas"); canvas.width = canvas.height = 256; const context = canvas.getContext("2d"), image = context.createImageData(256, 256);
@@ -152,7 +161,7 @@ function setCursorOpacity(cursor, opacity) { if (!cursor) return; cursor.travers
 function styleCursor(cursor) { cursor.traverse(child => { if (child.isMesh) { child.material = child.material.clone(); child.material.color?.set(0x168dff); child.material.metalness = .08; child.material.roughness = .22; child.material.transparent = true; child.material.opacity = 1; child.material.depthWrite = false; } }); }
 let hello, cursor3d, manifestoCursor;
 const modelsReady = Promise.all([
-  loadModel(helloModelUrl).then(model => { hello = normalizeModel(model, 5.1); applyWaterMaterial(hello); hello.position.set(.15, .15, 0); hello.rotation.set(-.08, -.12, -.03); scene.add(hello); document.body.classList.add("hello-ready"); }),
+  loadHelloModel().then(model => { hello = normalizeModel(model, 5.1); applyWaterMaterial(hello); hello.position.set(.15, .15, 0); hello.rotation.set(-.08, -.12, -.03); scene.add(hello); document.body.classList.add("hello-ready"); }),
   loadModel(cursorModelUrl).then(model => { cursor3d = normalizeModel(model, .48); styleCursor(cursor3d); cursor3d.position.set(3.1, -1.7, .4); cursor3d.rotation.set(-.2, .2, -.18); manifestoCursor = cursor3d.clone(true); styleCursor(manifestoCursor); manifestoCursor.visible = false; cursorScene.add(cursor3d, manifestoCursor); })
 ]);
 
